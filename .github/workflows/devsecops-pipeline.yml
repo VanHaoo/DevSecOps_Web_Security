@@ -1,0 +1,329 @@
+name: DevSecOps CI/CD & Security Pipeline
+
+"on":
+  push:
+    branches: [ "master", "feature/**" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ========================================================
+  # Job 1: Unit & Integration Testing
+  # ========================================================
+  unit-tests:
+    name: 1. Unit Testing (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pytest with coverage
+        run: |
+          python -m pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Upload Test Coverage Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: coverage.xml
+          retention-days: 14
+
+  # ========================================================
+  # Job 2: SAST (Semgrep)
+  # ========================================================
+  sast-semgrep:
+    name: 2. SAST (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create evidence directory
+        run: mkdir -p evidence/security-tooling
+
+      - name: Run Semgrep SAST
+        run: |
+          SEMGREP_EXIT=0
+          docker run --rm -v "${PWD}:/src" semgrep/semgrep:1.109.0 \
+            semgrep scan \
+            --config /src/security/semgrep/semgrep-rules.yaml \
+            --config "p/flask" \
+            --config "p/owasp-top-ten" \
+            --json \
+            --output /src/evidence/security-tooling/semgrep-report.json \
+            /src/app /src/wsgi.py || SEMGREP_EXIT=$?
+
+          echo "Semgrep exit code: $SEMGREP_EXIT"
+          if [ $SEMGREP_EXIT -gt 1 ]; then
+            echo "FATAL: Semgrep execution failed with system error $SEMGREP_EXIT."
+            exit $SEMGREP_EXIT
+          fi
+
+      - name: Verify Semgrep Report Validity
+        run: |
+          test -s evidence/security-tooling/semgrep-report.json
+          python3 -c "import json; data=json.load(open('evidence/security-tooling/semgrep-report.json')); print(f'Semgrep scanned successfully. Findings count: {len(data.get(\"results\", []))}')"
+
+      - name: Upload Semgrep Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: evidence/security-tooling/semgrep-report.json
+          retention-days: 14
+
+  # ========================================================
+  # Job 3: Secret Scanning (Gitleaks)
+  # ========================================================
+  secret-scan-gitleaks:
+    name: 3. Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create evidence directory
+        run: mkdir -p evidence/security-tooling
+
+      - name: Run Gitleaks
+        run: |
+          GITLEAKS_EXIT=0
+          docker run --rm -v "${PWD}:/src" zricethezav/gitleaks:v8.24.0 \
+            detect --source /src \
+            --config /src/security/gitleaks/gitleaks.toml \
+            --report-path /src/evidence/security-tooling/gitleaks-report.json \
+            --report-format json \
+            --verbose || GITLEAKS_EXIT=$?
+
+          echo "Gitleaks exit code: $GITLEAKS_EXIT"
+          if [ $GITLEAKS_EXIT -ne 0 ] && [ $GITLEAKS_EXIT -ne 1 ]; then
+            echo "FATAL: Gitleaks execution crashed with system error $GITLEAKS_EXIT."
+            exit $GITLEAKS_EXIT
+          fi
+
+      - name: Verify Gitleaks Report Validity
+        run: |
+          test -f evidence/security-tooling/gitleaks-report.json
+          python3 -c "import json; data=json.load(open('evidence/security-tooling/gitleaks-report.json')); print(f'Gitleaks scan complete. Leaks detected: {len(data)}')"
+
+      - name: Upload Gitleaks Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: evidence/security-tooling/gitleaks-report.json
+          retention-days: 14
+
+  # ========================================================
+  # Job 4: SCA, Container Scan & SBOM (Trivy)
+  # ========================================================
+  sca-container-trivy:
+    name: 4. SCA, Container Scan & SBOM (Trivy)
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create evidence directory
+        run: mkdir -p evidence/security-tooling
+
+      - name: Build Docker Image
+        run: |
+          docker build -t devsecops_web_security-web:latest .
+
+      - name: Run Trivy Filesystem Scan (SCA)
+        run: |
+          docker run --rm -v "${PWD}:/src" aquasec/trivy:0.59.1 \
+            fs --scanners vuln --skip-dirs venv --skip-dirs .git \
+            --format json --output /src/evidence/security-tooling/trivy-fs-report.json /src
+
+      - name: Run Trivy Docker Image Scan
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "${PWD}:/src" \
+            aquasec/trivy:0.59.1 \
+            image --format json --output /src/evidence/security-tooling/trivy-image-report.json \
+            devsecops_web_security-web:latest
+
+      - name: Generate CycloneDX SBOM (Image & FS)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "${PWD}:/src" \
+            aquasec/trivy:0.59.1 \
+            image --format cyclonedx --output /src/evidence/security-tooling/sbom-image-cyclonedx.json \
+            devsecops_web_security-web:latest
+
+          docker run --rm -v "${PWD}:/src" \
+            aquasec/trivy:0.59.1 \
+            fs --skip-dirs venv --skip-dirs .git --format cyclonedx \
+            --output /src/evidence/security-tooling/sbom-fs-cyclonedx.json /src
+
+      - name: Verify Trivy Reports & SBOM Validity
+        run: |
+          python3 -c "import json
+          fs = json.load(open('evidence/security-tooling/trivy-fs-report.json'))
+          img = json.load(open('evidence/security-tooling/trivy-image-report.json'))
+          sbom = json.load(open('evidence/security-tooling/sbom-image-cyclonedx.json'))
+          print('Trivy reports and CycloneDX SBOM validated successfully.')
+          print(f'SBOM Components: {len(sbom.get(\"components\", []))}')"
+
+      - name: Upload Trivy & SBOM Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-and-sbom-reports
+          path: |
+            evidence/security-tooling/trivy-fs-report.json
+            evidence/security-tooling/trivy-image-report.json
+            evidence/security-tooling/sbom-image-cyclonedx.json
+            evidence/security-tooling/sbom-fs-cyclonedx.json
+          retention-days: 14
+
+  # ========================================================
+  # Job 5: DAST (OWASP ZAP Baseline Scan)
+  # ========================================================
+  dast-owasp-zap:
+    name: 5. DAST (OWASP ZAP Baseline)
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create evidence directory
+        run: mkdir -p evidence/dast
+
+      - name: Start Application Container with Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for Application Healthcheck
+        run: |
+          echo "Waiting for web application container to become healthy..."
+          HEALTHY=false
+          WEB_CID=$(docker compose ps -q web)
+          for i in {1..30}; do
+            STATUS=$(docker inspect --format='{{json .State.Health.Status}}' "$WEB_CID" 2>/dev/null || echo '"starting"')
+            if [ "$STATUS" = '"healthy"' ]; then
+              echo "Web container is healthy after $((i * 2))s!"
+              HEALTHY=true
+              break
+            fi
+            echo "Health status: $STATUS. Waiting 2s... ($i/30)"
+            sleep 2
+          done
+          if [ "$HEALTHY" != "true" ]; then
+            echo "FATAL: Web container failed to become healthy within 60s."
+            docker compose logs
+            exit 1
+          fi
+
+      - name: Seed Database inside Container
+        run: |
+          docker compose exec -T web python -c "from scripts.seed_db import seed_database; seed_database()"
+
+      - name: Run OWASP ZAP Baseline Scan
+        run: |
+          WEB_CID=$(docker compose ps -q web)
+          NETWORK_NAME=$(docker inspect --format='{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' "$WEB_CID")
+          echo "Connecting ZAP to internal Docker network: $NETWORK_NAME"
+          ZAP_EXIT=0
+          docker run --rm \
+            --network "$NETWORK_NAME" \
+            -v "${PWD}/evidence/dast:/zap/wrk/:rw" \
+            -v "${PWD}/security/zap:/zap/config/:ro" \
+            zaproxy/zap-stable:latest \
+            zap-baseline.py \
+            -t http://web:5000 \
+            -c /zap/config/zap-baseline.conf \
+            -r zap-report.html \
+            -J zap-report.json \
+            -I \
+            -m 2 || ZAP_EXIT=$?
+
+          echo "OWASP ZAP exited with code: $ZAP_EXIT"
+          # Exit codes: 0 = PASS, 1 = FAIL found, 2 = WARN found, 3 = ZAP internal error
+          if [ $ZAP_EXIT -eq 3 ]; then
+            echo "FATAL: ZAP failed with error (code 3: target unreachable or invalid parameters)."
+            exit 3
+          elif [ $ZAP_EXIT -gt 3 ]; then
+            echo "FATAL: Docker/system execution failed with exit code $ZAP_EXIT."
+            exit $ZAP_EXIT
+          fi
+          echo "ZAP Baseline scan completed in Audit Mode (findings captured, exit code $ZAP_EXIT)."
+
+      - name: Stop Application Containers
+        if: always()
+        run: |
+          docker compose down
+
+      - name: Verify DAST Report Generation
+        run: |
+          test -s evidence/dast/zap-report.html
+          test -s evidence/dast/zap-report.json
+          python3 -c "import json
+          data = json.load(open('evidence/dast/zap-report.json'))
+          alerts = data.get('site', [{}])[0].get('alerts', []) if isinstance(data.get('site'), list) else data.get('site', {}).get('alerts', [])
+          print(f'ZAP Baseline Scan complete. Total alert categories: {len(alerts)}')"
+
+      - name: Upload DAST Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-zap-reports
+          path: |
+            evidence/dast/zap-report.html
+            evidence/dast/zap-report.json
+          retention-days: 14
+
+  # ========================================================
+  # Job 6: Audit Summary & Quality Status
+  # ========================================================
+  pipeline-summary:
+    name: 6. Pipeline Summary (Audit Mode)
+    needs: [unit-tests, sast-semgrep, secret-scan-gitleaks, sca-container-trivy, dast-owasp-zap]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Overall Status
+        run: |
+          echo "========================================================"
+          echo "  DEVSECOPS CI/CD PIPELINE EXECUTION SUMMARY (AUDIT)   "
+          echo "========================================================"
+          echo "Unit Tests:     ${{ needs.unit-tests.result }}"
+          echo "Semgrep SAST:   ${{ needs.sast-semgrep.result }}"
+          echo "Gitleaks:       ${{ needs.secret-scan-gitleaks.result }}"
+          echo "Trivy SCA/SBOM: ${{ needs.sca-container-trivy.result }}"
+          echo "DAST OWASP ZAP: ${{ needs.dast-owasp-zap.result }}"
+          echo "========================================================"
+          if [ "${{ needs.unit-tests.result }}" != "success" ] || \
+             [ "${{ needs.sast-semgrep.result }}" != "success" ] || \
+             [ "${{ needs.secret-scan-gitleaks.result }}" != "success" ] || \
+             [ "${{ needs.sca-container-trivy.result }}" != "success" ] || \
+             [ "${{ needs.dast-owasp-zap.result }}" != "success" ]; then
+            echo "WARNING: One or more security tooling jobs failed to execute properly."
+            exit 1
+          fi
+          echo "All pipeline jobs executed successfully in Audit Mode."
