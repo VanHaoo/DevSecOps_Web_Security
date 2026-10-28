@@ -1,4 +1,4 @@
-# ---------- Build stage ----------
+# ---------- Production stage ----------
 FROM python:3.12-slim AS base
 
 # Security: run as non-root
@@ -6,7 +6,7 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuse
 
 WORKDIR /app
 
-# Install dependencies first (Docker layer caching)
+# Install ONLY production dependencies (REM-03: exclude pytest, pytest-cov)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -23,6 +23,7 @@ USER appuser
 # Environment variables
 ENV FLASK_ENV=production
 ENV SECRET_KEY=change-this-in-production
+ENV SESSION_COOKIE_SECURE=False
 
 EXPOSE 5000
 

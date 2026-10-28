@@ -1,0 +1,48 @@
+{
+  "project": "DevSecOps_Web_Security",
+  "phase": 2,
+  "timestamp": "2026-10-28T08:45:00+07:00",
+  "tools": {
+    "semgrep": {
+      "type": "SAST",
+      "version": "1.109.0",
+      "image": "semgrep/semgrep:1.109.0",
+      "report": "semgrep-report.json",
+      "rulesets": [
+        "security/semgrep/semgrep-rules.yaml (Custom)",
+        "p/flask (Community)",
+        "p/owasp-top-ten (Community)"
+      ]
+    },
+    "trivy_fs": {
+      "type": "SCA",
+      "version": "0.59.1",
+      "image": "aquasec/trivy:0.59.1",
+      "report": "trivy-fs-report.json",
+      "target": "Filesystem dependencies (requirements.txt)"
+    },
+    "trivy_image": {
+      "type": "Container Vulnerability Scanning",
+      "version": "0.59.1",
+      "image": "aquasec/trivy:0.59.1",
+      "report": "trivy-image-report.json",
+      "target": "devsecops_web_security-web:latest"
+    },
+    "gitleaks": {
+      "type": "Secret Scanning",
+      "version": "8.24.0",
+      "image": "zricethezav/gitleaks:v8.24.0",
+      "report": "gitleaks-report.json",
+      "target": "Git commit history & working directory"
+    },
+    "trivy_sbom": {
+      "type": "SBOM Generation",
+      "version": "0.59.1",
+      "format": "CycloneDX 1.6 JSON",
+      "reports": [
+        "sbom-image-cyclonedx.json",
+        "sbom-fs-cyclonedx.json"
+      ]
+    }
+  }
+}
