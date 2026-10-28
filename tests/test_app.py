@@ -302,7 +302,7 @@ class TestErrorCases:
         """TC-28: Home page loads successfully."""
         response = client.get('/')
         assert response.status_code == 200
-        assert 'DevSecOps' in response.data.decode('utf-8')
+        assert 'Hệ thống quản lý sản phẩm' in response.data.decode('utf-8')
 
     def test_admin_user_list(self, client, admin_user, regular_user):
         """TC-29: Admin can view user list."""

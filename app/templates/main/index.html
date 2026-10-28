@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Trang chủ - DevSecOps Lab{% endblock %}
+{% block title %}Trang chủ - Hệ thống quản lý sản phẩm{% endblock %}
 
 {% block content %}
 <div class="text-center py-5">
     <h1 class="display-4 mb-3">
-        <i class="bi bi-shield-lock text-primary"></i>
-        DevSecOps Web Security Lab
+        <i class="bi bi-box-seam text-primary"></i>
+        Hệ thống quản lý sản phẩm
     </h1>
     <p class="lead text-muted mb-4">
-        Ứng dụng quản lý sản phẩm - Thực nghiệm tích hợp kiểm soát an toàn vào vòng đời phát triển phần mềm
+        Giải pháp quản lý danh mục sản phẩm, kiểm soát tồn kho và phân quyền người dùng chuyên nghiệp
     </p>
     <div class="d-flex justify-content-center gap-3">
         <a href="{{ url_for('products.product_list') }}" class="btn btn-primary btn-lg">
@@ -27,27 +27,27 @@
     <div class="col-md-4">
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="bi bi-speedometer2 display-4 text-primary"></i>
-                <h5 class="card-title mt-3">CI/CD Pipeline</h5>
-                <p class="card-text text-muted">Tích hợp kiểm tra an toàn tự động vào quy trình phát triển liên tục.</p>
+                <i class="bi bi-box-seam display-4 text-primary"></i>
+                <h5 class="card-title mt-3">Danh mục sản phẩm</h5>
+                <p class="card-text text-muted">Quản lý danh sách, chi tiết thông tin và giá thành các mặt hàng.</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="bi bi-search display-4 text-success"></i>
-                <h5 class="card-title mt-3">Security Scanning</h5>
-                <p class="card-text text-muted">SAST, SCA, Secret Scanning, DAST và SBOM tự động.</p>
+                <i class="bi bi-shield-lock display-4 text-success"></i>
+                <h5 class="card-title mt-3">Bảo mật & Phân quyền</h5>
+                <p class="card-text text-muted">Bảo vệ thông tin tài khoản và phân quyền quản trị chặt chẽ.</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="bi bi-shield-check display-4 text-warning"></i>
-                <h5 class="card-title mt-3">Quality Gate</h5>
-                <p class="card-text text-muted">Chặn phát hành tự động khi phát hiện vấn đề bảo mật.</p>
+                <i class="bi bi-check-circle display-4 text-info"></i>
+                <h5 class="card-title mt-3">Kiểm soát tồn kho</h5>
+                <p class="card-text text-muted">Cập nhật số lượng và trạng thái kho hàng chính xác theo thời gian thực.</p>
             </div>
         </div>
     </div>
