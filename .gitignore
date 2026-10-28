@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Database (runtime)
+instance/
+*.db
+*.sqlite3
+
+# Docker
+docker/data/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Security scan results (may contain sensitive info)
+evidence/*.json
+evidence/*.html
+evidence/*.sarif
+
+# Byte-compiled
+*.pyc

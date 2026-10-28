@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Sản phẩm - DevSecOps Lab{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-box-seam"></i> Sản phẩm</h1>
+</div>
+
+<!-- Search and Filter -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('products.product_list') }}" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Tìm kiếm sản phẩm..." value="{{ query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="category" class="form-select">
+                    <option value="">Tất cả danh mục</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Lọc</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Product Grid -->
+{% if products %}
+<div class="row g-4">
+    {% for product in products %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card h-100 shadow-sm product-card">
+            {% if product.image_url %}
+            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                {% if product.category %}
+                <span class="badge bg-secondary mb-2">{{ product.category }}</span>
+                {% endif %}
+                <p class="card-text text-muted">{{ product.description[:100] + '...' if product.description and product.description|length > 100 else product.description or 'Không có mô tả' }}</p>
+                <p class="card-text fw-bold text-primary fs-5">{{ "{:,.0f}".format(product.price) }} VNĐ</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-eye"></i> Xem chi tiết
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox display-1 text-muted"></i>
+    <p class="text-muted mt-3">Không tìm thấy sản phẩm nào.</p>
+</div>
+{% endif %}
+{% endblock %}
