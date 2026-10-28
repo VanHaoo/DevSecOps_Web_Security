@@ -1,0 +1,13 @@
+# Gitleaks Configuration for DevSecOps Web Security Lab
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for benign public keys and scan evidence reports"
+paths = [
+    '''evidence/security-tooling/trivy-image-report\.json''',
+    '''evidence/security-tooling/.*'''
+]
+regexes = [
+    '''7169605F62C751356D054A26A821E680E5FA6305''' # Official Python release manager GPG signing key
+]

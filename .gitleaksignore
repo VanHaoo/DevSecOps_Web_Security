@@ -1,0 +1,6 @@
+# Gitleaks ignore list
+# Public GPG release signing key for Python in Trivy scan report
+/src/evidence/security-tooling/trivy-image-report.json:generic-api-key:60
+/src/evidence/security-tooling/trivy-image-report.json:generic-api-key:211
+evidence/security-tooling/trivy-image-report.json:generic-api-key:60
+evidence/security-tooling/trivy-image-report.json:generic-api-key:211

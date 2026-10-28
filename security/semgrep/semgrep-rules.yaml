@@ -1,0 +1,61 @@
+rules:
+  - id: flask-debug-true
+    patterns:
+      - pattern: app.run(..., debug=True, ...)
+    message: "Phát hiện cấu hình Flask debug=True trong môi trường production, có thể làm lộ mã nguồn và cho phép thực thi mã qua debugger console."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-489: Active Debug Code"
+      owasp: "A05:2021 - Security Misconfiguration"
+
+  - id: hardcoded-secret-key
+    patterns:
+      - pattern-either:
+          - pattern: app.config['SECRET_KEY'] = "..."
+          - pattern: SECRET_KEY = "..."
+    message: "Phát hiện giá trị SECRET_KEY hardcoded trực tiếp trong mã nguồn. Cần sử dụng biến môi trường (os.environ.get)."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      owasp: "A07:2021 - Identification and Authentication Failures"
+
+  - id: direct-sql-formatting
+    patterns:
+      - pattern-either:
+          - pattern: db.session.execute(f"...")
+          - pattern: db.session.execute("..." % ...)
+          - pattern: db.session.execute("...".format(...))
+    message: "Phát hiện việc nối chuỗi trực tiếp vào câu lệnh SQL. Có nguy cơ cao bị lỗ hổng SQL Injection (CWE-89)."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 - Injection"
+
+  - id: weak-password-hashing
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+    message: "Phát hiện sử dụng hàm băm yếu (MD5 hoặc SHA-1). Cần sử dụng scrypt, argon2 hoặc pbkdf2."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-328: Use of Weak Hash"
+      owasp: "A02:2021 - Cryptographic Failures"
+
+  - id: post-without-csrf-decorator
+    patterns:
+      - pattern: |
+          @$BP.route(..., methods=[..., 'POST', ...])
+          @csrf.exempt
+          def $FUNC(...):
+              ...
+    message: "Endpoint POST đang được miễn trừ bảo vệ CSRF (@csrf.exempt)."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-352: Cross-Site Request Forgery (CSRF)"
+      owasp: "A01:2021 - Broken Access Control"
