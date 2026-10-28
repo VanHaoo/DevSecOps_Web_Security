@@ -5,6 +5,8 @@ from app import db
 from app.models import Product, User
 from app.forms import ProductForm
 
+from app.blueprints.admin.security_service import get_security_dashboard_data
+
 admin_bp = Blueprint('admin', __name__, template_folder='../../templates/admin')
 
 
@@ -30,6 +32,14 @@ def dashboard():
         product_count=product_count,
         user_count=user_count
     )
+
+
+@admin_bp.route('/security-dashboard')
+@admin_required
+def security_dashboard():
+    """Security and DevSecOps Quality Dashboard (Admin only)."""
+    data = get_security_dashboard_data()
+    return render_template('admin/security_dashboard.html', **data)
 
 
 @admin_bp.route('/products/add', methods=['GET', 'POST'])
