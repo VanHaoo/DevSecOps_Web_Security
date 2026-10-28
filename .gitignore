@@ -43,10 +43,15 @@ htmlcov/
 .coverage
 coverage.xml
 
-# Security scan results (may contain sensitive info)
-evidence/*.json
-evidence/*.html
-evidence/*.sarif
+# Security scan outputs (auto-generated)
+evidence/security-tooling/
+evidence/dast/
+evidence/ci-run/
+evidence/test-reports/
+evidence/quality-gate/*.json
+evidence/quality-gate/*.md
+!evidence/quality-gate/regression_test/**
+!evidence/remediation/**
 
 # Byte-compiled
 *.pyc
