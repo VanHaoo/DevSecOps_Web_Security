@@ -1,0 +1,22 @@
+[
+  {
+    "RuleID": "generic-api-key",
+    "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+    "StartLine": 106,
+    "EndLine": 106,
+    "StartColumn": 2,
+    "EndColumn": 56,
+    "Match": "GITHUB_TOKEN = \"ghp_REDACTED_CONTROLLED_TEST_KEY_XXXXXXXX\"",
+    "Secret": "ghp_REDACTED_CONTROLLED_TEST_KEY_XXXXXXXX",
+    "File": "/path/app/__init__.py",
+    "SymlinkFile": "",
+    "Commit": "",
+    "Entropy": 5.0900326,
+    "Author": "",
+    "Email": "",
+    "Date": "",
+    "Message": "",
+    "Tags": [],
+    "Fingerprint": "/path/app/__init__.py:generic-api-key:106"
+  }
+]

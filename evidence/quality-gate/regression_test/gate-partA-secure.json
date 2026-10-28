@@ -1,0 +1,426 @@
+{
+  "timestamp": "2026-10-28T13:53:27.833079",
+  "evaluation_date": "2026-10-28",
+  "mode": "enforce",
+  "overall_status": "PASS",
+  "exit_code": 0,
+  "summary": {
+    "total_checks": 6,
+    "passed_checks": 6,
+    "failed_checks": 0,
+    "blocking_violations": 0,
+    "tracked_warnings": 119,
+    "active_exceptions_used": 49
+  },
+  "tools": {
+    "unit_tests": {
+      "status": "PASS",
+      "description": "pytest functional and regression test suite",
+      "details": {
+        "message": "All unit tests passed successfully."
+      }
+    },
+    "gitleaks": {
+      "status": "PASS",
+      "description": "Secret and credential scanning",
+      "leaks_found": 0
+    },
+    "semgrep": {
+      "status": "PASS",
+      "description": "Static Application Security Testing",
+      "findings": 0
+    },
+    "trivy_fs": {
+      "status": "PASS",
+      "description": "Software Composition Analysis (Filesystem)",
+      "vulnerabilities": 0
+    },
+    "trivy_image": {
+      "status": "PASS",
+      "description": "Container image vulnerability scanning",
+      "total_vulnerabilities": 170,
+      "application_vulnerabilities": 6,
+      "os_vulnerabilities": 164,
+      "exempted_high_critical": 49,
+      "unexempted_high_critical": 0
+    },
+    "zap_dast": {
+      "status": "PASS",
+      "description": "Dynamic Application Security Testing",
+      "alert_groups": 9,
+      "instances": 26,
+      "breakdown": {
+        "high": 0,
+        "medium": 0,
+        "low": 10,
+        "informational": 16
+      }
+    }
+  },
+  "violations": [],
+  "warnings": [
+    {
+      "tool": "zap_dast",
+      "severity": "LOW",
+      "name": "Cross-Origin-Embedder-Policy Header Missing or Invalid",
+      "instances": 3
+    },
+    {
+      "tool": "zap_dast",
+      "severity": "LOW",
+      "name": "Cross-Origin-Opener-Policy Header Missing or Invalid",
+      "instances": 3
+    },
+    {
+      "tool": "zap_dast",
+      "severity": "LOW",
+      "name": "Cross-Origin-Resource-Policy Header Missing or Invalid",
+      "instances": 4
+    }
+  ],
+  "exceptions_used": [
+    {
+      "exception_id": "EXC-2026-013",
+      "cve_id": "CVE-2026-76642",
+      "package": "bsdutils",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-022",
+      "cve_id": "CVE-2026-78408",
+      "package": "bsdutils",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-031",
+      "cve_id": "CVE-2026-78409",
+      "package": "bsdutils",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-040",
+      "cve_id": "CVE-2026-78410",
+      "package": "bsdutils",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-011",
+      "cve_id": "CVE-2026-54369",
+      "package": "libacl1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-014",
+      "cve_id": "CVE-2026-76642",
+      "package": "libblkid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-023",
+      "cve_id": "CVE-2026-78408",
+      "package": "libblkid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-032",
+      "cve_id": "CVE-2026-78409",
+      "package": "libblkid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-041",
+      "cve_id": "CVE-2026-78410",
+      "package": "libblkid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-015",
+      "cve_id": "CVE-2026-76642",
+      "package": "liblastlog2-2",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-024",
+      "cve_id": "CVE-2026-78408",
+      "package": "liblastlog2-2",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-033",
+      "cve_id": "CVE-2026-78409",
+      "package": "liblastlog2-2",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-042",
+      "cve_id": "CVE-2026-78410",
+      "package": "liblastlog2-2",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-016",
+      "cve_id": "CVE-2026-76642",
+      "package": "libmount1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-025",
+      "cve_id": "CVE-2026-78408",
+      "package": "libmount1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-034",
+      "cve_id": "CVE-2026-78409",
+      "package": "libmount1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-043",
+      "cve_id": "CVE-2026-78410",
+      "package": "libmount1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-001",
+      "cve_id": "CVE-2025-69720",
+      "package": "libncursesw6",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-017",
+      "cve_id": "CVE-2026-76642",
+      "package": "libsmartcols1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-026",
+      "cve_id": "CVE-2026-78408",
+      "package": "libsmartcols1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-035",
+      "cve_id": "CVE-2026-78409",
+      "package": "libsmartcols1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-044",
+      "cve_id": "CVE-2026-78410",
+      "package": "libsmartcols1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-007",
+      "cve_id": "CVE-2026-16742",
+      "package": "libsystemd0",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-002",
+      "cve_id": "CVE-2025-69720",
+      "package": "libtinfo6",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-008",
+      "cve_id": "CVE-2026-16742",
+      "package": "libudev1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-018",
+      "cve_id": "CVE-2026-76642",
+      "package": "libuuid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-027",
+      "cve_id": "CVE-2026-78408",
+      "package": "libuuid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-036",
+      "cve_id": "CVE-2026-78409",
+      "package": "libuuid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-045",
+      "cve_id": "CVE-2026-78410",
+      "package": "libuuid1",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-019",
+      "cve_id": "CVE-2026-76642",
+      "package": "login",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-028",
+      "cve_id": "CVE-2026-78408",
+      "package": "login",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-037",
+      "cve_id": "CVE-2026-78409",
+      "package": "login",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-046",
+      "cve_id": "CVE-2026-78410",
+      "package": "login",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-020",
+      "cve_id": "CVE-2026-76642",
+      "package": "mount",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-029",
+      "cve_id": "CVE-2026-78408",
+      "package": "mount",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-038",
+      "cve_id": "CVE-2026-78409",
+      "package": "mount",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-047",
+      "cve_id": "CVE-2026-78410",
+      "package": "mount",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-003",
+      "cve_id": "CVE-2025-69720",
+      "package": "ncurses-base",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-004",
+      "cve_id": "CVE-2025-69720",
+      "package": "ncurses-bin",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-050",
+      "cve_id": "CVE-2026-9538",
+      "package": "perl-base",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-021",
+      "cve_id": "CVE-2026-76642",
+      "package": "util-linux",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-030",
+      "cve_id": "CVE-2026-78408",
+      "package": "util-linux",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-039",
+      "cve_id": "CVE-2026-78409",
+      "package": "util-linux",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-048",
+      "cve_id": "CVE-2026-78410",
+      "package": "util-linux",
+      "scope": "os_package",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-005",
+      "cve_id": "CVE-2025-8869",
+      "package": "pip",
+      "scope": "lang-pkg",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-006",
+      "cve_id": "CVE-2026-13346",
+      "package": "pip",
+      "scope": "lang-pkg",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-010",
+      "cve_id": "CVE-2026-3219",
+      "package": "pip",
+      "scope": "lang-pkg",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-012",
+      "cve_id": "CVE-2026-6357",
+      "package": "pip",
+      "scope": "lang-pkg",
+      "expires_at": "2027-04-28"
+    },
+    {
+      "exception_id": "EXC-2026-049",
+      "cve_id": "CVE-2026-8643",
+      "package": "pip",
+      "scope": "lang-pkg",
+      "expires_at": "2027-04-28"
+    }
+  ]
+}

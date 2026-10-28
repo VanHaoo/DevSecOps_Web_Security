@@ -1,0 +1,75 @@
+# ==============================================================================
+# DevSecOps Security Quality Gate Policy Specification
+# Version: 1.0.0
+# Description: Defines blocking thresholds and compliance rules across DevSecOps tools.
+# ==============================================================================
+
+version: "1.0.0"
+mode: "enforce" # Options: 'enforce' (blocks pipeline on violation) | 'audit' (logs only)
+
+# Mandatory tools required for release consideration. Missing reports fail the gate.
+mandatory_tools:
+  - name: "unit_tests"
+    required: true
+    description: "Automated unit and functional regression test suite (pytest)"
+  - name: "gitleaks"
+    required: true
+    description: "Secret and credential scanning across commits and working directory"
+  - name: "semgrep"
+    required: true
+    description: "Static Application Security Testing (SAST) on application source code"
+  - name: "trivy_fs"
+    required: true
+    description: "Software Composition Analysis (SCA) on application dependencies"
+  - name: "trivy_image"
+    required: true
+    description: "Container image vulnerability scanning on production Docker image"
+  - name: "zap_dast"
+    required: true
+    description: "Dynamic Application Security Testing (DAST) baseline scan"
+
+# Threshold definitions for PASS / FAIL decisions
+thresholds:
+  unit_tests:
+    max_failed: 0
+    min_pass_rate_percent: 100.0
+
+  gitleaks:
+    max_leaks: 0
+    severity_action: "block"
+
+  semgrep:
+    max_errors: 0
+    max_warnings: 0
+    blocked_severities:
+      - "ERROR"
+      - "WARNING"
+
+  trivy_fs:
+    max_critical: 0
+    max_high: 0
+    max_medium: 0
+    max_low: 5
+
+  trivy_image:
+    application_dependencies:
+      max_critical: 0
+      max_high: 0
+      max_medium: 0
+    os_packages:
+      max_unexempted_critical: 0
+      max_unexempted_high: 0
+      medium_action: "track"
+      low_action: "track"
+
+  zap_dast:
+    max_high: 0
+    max_medium: 0
+    max_low: 15
+    max_informational: 25
+
+# Exception management configuration
+exceptions_config:
+  file_path: "security/policies/exceptions.yaml"
+  enforce_expiration: true
+  allow_wildcard_bypass: false

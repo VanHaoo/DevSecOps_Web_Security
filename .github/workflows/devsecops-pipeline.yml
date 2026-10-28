@@ -3,9 +3,19 @@ name: DevSecOps CI/CD & Security Pipeline
 "on":
   push:
     branches: [ "master", "feature/**" ]
+    tags: [ "v*.*.*", "v*" ]
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
+    inputs:
+      gate_mode:
+        description: "Security Quality Gate Evaluation Mode"
+        required: true
+        default: "audit"
+        type: choice
+        options:
+          - audit
+          - enforce
 
 permissions:
   contents: read
@@ -35,14 +45,19 @@ jobs:
 
       - name: Run pytest with coverage
         run: |
-          python -m pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
+          mkdir -p evidence/test-reports
+          python -m pytest tests/ -v \
+            --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml \
+            --junitxml=evidence/test-reports/junit.xml
 
-      - name: Upload Test Coverage Artifact
+      - name: Upload Test Coverage & Report Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-coverage
-          path: coverage.xml
+          name: unit-test-results
+          path: |
+            coverage.xml
+            evidence/test-reports/junit.xml
           retention-days: 14
 
   # ========================================================
@@ -327,3 +342,164 @@ jobs:
             exit 1
           fi
           echo "All pipeline jobs executed successfully in Audit Mode."
+
+  # ========================================================
+  # Job 7: Security Quality Gate Evaluation (Release Blocker)
+  # ========================================================
+  security-quality-gate:
+    name: 7. Security Quality Gate
+    needs: [unit-tests, sast-semgrep, secret-scan-gitleaks, sca-container-trivy, dast-owasp-zap]
+    runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      gate_mode: ${{ steps.gate-mode.outputs.mode }}
+      gate_status: ${{ steps.run-gate.outputs.gate_status }}
+    steps:
+      - name: Checkout Code & Security Policies
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create Clean CI Evaluation Directory
+        run: |
+          mkdir -p evidence/ci-run/semgrep
+          mkdir -p evidence/ci-run/gitleaks
+          mkdir -p evidence/ci-run/trivy
+          mkdir -p evidence/ci-run/dast
+          mkdir -p evidence/quality-gate
+
+      - name: Download Semgrep Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: semgrep-report
+          path: evidence/ci-run/semgrep
+
+      - name: Download Gitleaks Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gitleaks-report
+          path: evidence/ci-run/gitleaks
+
+      - name: Download Trivy & SBOM Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-and-sbom-reports
+          path: evidence/ci-run/trivy
+
+      - name: Download ZAP DAST Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dast-zap-reports
+          path: evidence/ci-run/dast
+
+      - name: Verify Fresh Artifacts Completeness & Validity
+        run: |
+          echo "========================================================"
+          echo "Verifying downloaded artifacts from current workflow run"
+          echo "========================================================"
+          for f in \
+            evidence/ci-run/semgrep/semgrep-report.json \
+            evidence/ci-run/gitleaks/gitleaks-report.json \
+            evidence/ci-run/trivy/trivy-fs-report.json \
+            evidence/ci-run/trivy/trivy-image-report.json \
+            evidence/ci-run/dast/zap-report.json; do
+            if [ ! -s "$f" ]; then
+              echo "FATAL (Code 2): Required scan artifact missing or empty: $f"
+              exit 2
+            fi
+            python3 -c "import json; json.load(open('$f'))" || {
+              echo "FATAL (Code 2): Malformed JSON in artifact: $f"
+              exit 2
+            }
+            echo " [OK] Validated JSON: $f"
+          done
+          echo "All required security reports verified."
+
+      - name: Determine Security Gate Mode
+        id: gate-mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ inputs.gate_mode }}"
+          else
+            case "${{ github.ref }}" in
+              refs/tags/v*) MODE="enforce" ;;
+              *) MODE="audit" ;;
+            esac
+          fi
+          echo "Resolved Security Quality Gate Mode: $MODE"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Execute Security Quality Gate Evaluator
+        id: run-gate
+        run: |
+          GATE_EXIT=0
+          UNIT_EXIT=0
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            UNIT_EXIT=1
+          fi
+
+          python scripts/security_gate.py \
+            --mode "${{ steps.gate-mode.outputs.mode }}" \
+            --policy security/policies/security-policy.json \
+            --exceptions security/policies/exceptions.json \
+            --semgrep-report evidence/ci-run/semgrep/semgrep-report.json \
+            --gitleaks-report evidence/ci-run/gitleaks/gitleaks-report.json \
+            --trivy-fs-report evidence/ci-run/trivy/trivy-fs-report.json \
+            --trivy-image-report evidence/ci-run/trivy/trivy-image-report.json \
+            --zap-report evidence/ci-run/dast/zap-report.json \
+            --test-exit-code "$UNIT_EXIT" \
+            --output-json evidence/quality-gate/security-gate-result.json \
+            --output-md evidence/quality-gate/security-gate-summary.md || GATE_EXIT=$?
+
+          echo "Gate evaluator process exited with code: $GATE_EXIT"
+
+          GATE_STATUS=$(python3 -c "import json; data=json.load(open('evidence/quality-gate/security-gate-result.json')); print(data.get('overall_status', 'UNKNOWN'))" 2>/dev/null || echo "ERROR")
+          echo "gate_status=$GATE_STATUS" >> "$GITHUB_OUTPUT"
+
+          # Publish Markdown summary to GitHub Actions Step Summary
+          if [ -f evidence/quality-gate/security-gate-summary.md ]; then
+            cat evidence/quality-gate/security-gate-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ $GATE_EXIT -eq 1 ]; then
+            echo "SECURITY GATE FAILED (Code 1): Security policy violations detected."
+            exit 1
+          elif [ $GATE_EXIT -eq 2 ]; then
+            echo "SECURITY GATE SYSTEM ERROR (Code 2): Malformed report or missing mandatory file."
+            exit 2
+          elif [ $GATE_EXIT -ne 0 ]; then
+            echo "SECURITY GATE UNKNOWN ERROR (Code $GATE_EXIT)."
+            exit $GATE_EXIT
+          fi
+          echo "SECURITY GATE PASSED (Code 0): Build conforms to security policy."
+
+      - name: Upload Security Quality Gate Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-quality-gate-results
+          path: evidence/quality-gate/
+          retention-days: 30
+
+  # ========================================================
+  # Job 8: Release & Deployment Gate (Strictly Blocked if Gate Fails or in Audit Mode)
+  # ========================================================
+  release-deployment:
+    name: 8. Release & Deployment Gate
+    needs: [security-quality-gate]
+    if: needs.security-quality-gate.result == 'success' && needs.security-quality-gate.outputs.gate_mode == 'enforce' && needs.security-quality-gate.outputs.gate_status == 'PASS'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Release Authorization
+        run: |
+          echo "========================================================"
+          echo "  SECURITY QUALITY GATE PASSED — RELEASE AUTHORIZED     "
+          echo "========================================================"
+          echo "Target Ref: ${{ github.ref }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Mode: ${{ needs.security-quality-gate.outputs.gate_mode }}"
+          echo "Status: ${{ needs.security-quality-gate.outputs.gate_status }}"
+          echo "Release deployment authorized strictly by Enforcement Mode PASS."

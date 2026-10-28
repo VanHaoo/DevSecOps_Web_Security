@@ -1,0 +1,483 @@
+{
+  "timestamp": "2026-10-28T14:51:15.454332",
+  "evaluation_date": "2026-10-28",
+  "mode": "enforce",
+  "overall_status": "FAIL",
+  "exit_code": 1,
+  "summary": {
+    "total_checks": 6,
+    "passed_checks": 4,
+    "failed_checks": 2,
+    "blocking_violations": 50,
+    "tracked_warnings": 119,
+    "active_exceptions_used": 0
+  },
+  "tools": {
+    "unit_tests": {
+      "status": "PASS",
+      "description": "pytest functional and regression test suite",
+      "details": {
+        "message": "All unit tests passed successfully."
+      }
+    },
+    "gitleaks": {
+      "status": "FAIL",
+      "description": "Secret and credential scanning",
+      "leaks_found": 1
+    },
+    "semgrep": {
+      "status": "PASS",
+      "description": "Static Application Security Testing",
+      "findings": 0
+    },
+    "trivy_fs": {
+      "status": "PASS",
+      "description": "Software Composition Analysis (Filesystem)",
+      "vulnerabilities": 0
+    },
+    "trivy_image": {
+      "status": "FAIL",
+      "description": "Container image vulnerability scanning",
+      "total_vulnerabilities": 170,
+      "application_vulnerabilities": 6,
+      "os_vulnerabilities": 164,
+      "exempted_high_critical": 0,
+      "unexempted_high_critical": 44
+    },
+    "zap_dast": {
+      "status": "PASS",
+      "description": "Dynamic Application Security Testing",
+      "alert_groups": 9,
+      "instances": 26,
+      "breakdown": {
+        "high": 0,
+        "medium": 0,
+        "low": 10,
+        "informational": 16
+      }
+    }
+  },
+  "violations": [
+    {
+      "tool": "gitleaks",
+      "severity": "CRITICAL",
+      "rule": "generic-api-key",
+      "file": "/path/app/__init__.py",
+      "line": 106,
+      "message": "Secret leak detected: Detected a Generic API Key, potentially exposing access to various services and sensitive operations."
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "bsdutils",
+      "message": "Exception EXC-2026-013 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "bsdutils",
+      "message": "Exception EXC-2026-022 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "bsdutils",
+      "message": "Exception EXC-2026-031 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "bsdutils",
+      "message": "Exception EXC-2026-040 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-54369",
+      "package": "libacl1",
+      "message": "Exception EXC-2026-011 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "libblkid1",
+      "message": "Exception EXC-2026-014 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "libblkid1",
+      "message": "Exception EXC-2026-023 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "libblkid1",
+      "message": "Exception EXC-2026-032 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "libblkid1",
+      "message": "Exception EXC-2026-041 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "liblastlog2-2",
+      "message": "Exception EXC-2026-015 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "liblastlog2-2",
+      "message": "Exception EXC-2026-024 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "liblastlog2-2",
+      "message": "Exception EXC-2026-033 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "liblastlog2-2",
+      "message": "Exception EXC-2026-042 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "libmount1",
+      "message": "Exception EXC-2026-016 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "libmount1",
+      "message": "Exception EXC-2026-025 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "libmount1",
+      "message": "Exception EXC-2026-034 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "libmount1",
+      "message": "Exception EXC-2026-043 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2025-69720",
+      "package": "libncursesw6",
+      "message": "Exception EXC-2026-001 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "libsmartcols1",
+      "message": "Exception EXC-2026-017 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "libsmartcols1",
+      "message": "Exception EXC-2026-026 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "libsmartcols1",
+      "message": "Exception EXC-2026-035 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "libsmartcols1",
+      "message": "Exception EXC-2026-044 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-16742",
+      "package": "libsystemd0",
+      "message": "Exception EXC-2026-007 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2025-69720",
+      "package": "libtinfo6",
+      "message": "Exception EXC-2026-002 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-16742",
+      "package": "libudev1",
+      "message": "Exception EXC-2026-008 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "libuuid1",
+      "message": "Exception EXC-2026-018 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "libuuid1",
+      "message": "Exception EXC-2026-027 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "libuuid1",
+      "message": "Exception EXC-2026-036 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "libuuid1",
+      "message": "Exception EXC-2026-045 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "login",
+      "message": "Exception EXC-2026-019 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "login",
+      "message": "Exception EXC-2026-028 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "login",
+      "message": "Exception EXC-2026-037 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "login",
+      "message": "Exception EXC-2026-046 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "mount",
+      "message": "Exception EXC-2026-020 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "mount",
+      "message": "Exception EXC-2026-029 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "mount",
+      "message": "Exception EXC-2026-038 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "mount",
+      "message": "Exception EXC-2026-047 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2025-69720",
+      "package": "ncurses-base",
+      "message": "Exception EXC-2026-003 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2025-69720",
+      "package": "ncurses-bin",
+      "message": "Exception EXC-2026-004 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-9538",
+      "package": "perl-base",
+      "message": "Exception EXC-2026-050 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-76642",
+      "package": "util-linux",
+      "message": "Exception EXC-2026-021 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78408",
+      "package": "util-linux",
+      "message": "Exception EXC-2026-030 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78409",
+      "package": "util-linux",
+      "message": "Exception EXC-2026-039 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "os_package",
+      "severity": "HIGH",
+      "cve_id": "CVE-2026-78410",
+      "package": "util-linux",
+      "message": "Exception EXC-2026-048 not in APPROVED status (current: PENDING_REVIEW)"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "application",
+      "severity": "MEDIUM",
+      "cve_id": "CVE-2025-8869",
+      "package": "pip",
+      "message": "Unfixed application vulnerability: pip: pip missing checks on symbolic link extraction"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "application",
+      "severity": "MEDIUM",
+      "cve_id": "CVE-2026-13346",
+      "package": "pip",
+      "message": "Unfixed application vulnerability: pip: pip: Arbitrary file installation via malicious package indexes"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "application",
+      "severity": "MEDIUM",
+      "cve_id": "CVE-2026-3219",
+      "package": "pip",
+      "message": "Unfixed application vulnerability: pip: pip: Incorrect file installation due to improper archive handling"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "application",
+      "severity": "MEDIUM",
+      "cve_id": "CVE-2026-6357",
+      "package": "pip",
+      "message": "Unfixed application vulnerability: pip: pip: Arbitrary code execution or information disclosure via malicious wheel package installation"
+    },
+    {
+      "tool": "trivy_image",
+      "scope": "application",
+      "severity": "MEDIUM",
+      "cve_id": "CVE-2026-8643",
+      "package": "pip",
+      "message": "Unfixed application vulnerability: python-pip: Path traversal via malicious entry point name in pip wheel installation allows arbitrary file overwrite"
+    }
+  ],
+  "warnings": [
+    {
+      "tool": "zap_dast",
+      "severity": "LOW",
+      "name": "Cross-Origin-Embedder-Policy Header Missing or Invalid",
+      "instances": 3
+    },
+    {
+      "tool": "zap_dast",
+      "severity": "LOW",
+      "name": "Cross-Origin-Opener-Policy Header Missing or Invalid",
+      "instances": 3
+    },
+    {
+      "tool": "zap_dast",
+      "severity": "LOW",
+      "name": "Cross-Origin-Resource-Policy Header Missing or Invalid",
+      "instances": 4
+    }
+  ],
+  "exceptions_used": []
+}
