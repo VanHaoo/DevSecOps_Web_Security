@@ -177,7 +177,7 @@ Quy trình DevSecOps Pipeline được định nghĩa tại `.github/workflows/d
 2. **Job 2: SAST (Semgrep)**: Quét mã nguồn tĩnh phát hiện lỗ hổng ứng dụng.
 3. **Job 3: Secret Scanning (Gitleaks)**: Quét phát hiện khóa bí mật, token vô tình lọt vào commit.
 4. **Job 4: SCA, Container Scan & SBOM (Trivy)**: Quét phụ thuộc thư viện, lỗ hổng base image và xuất SBOM định dạng CycloneDX.
-5. **Job 5: DAST (OWASP ZAP)**: Khởi chạy container tạm thời và thực hiện quét động baseline API/Web.
+5. **Job 5: DAST (OWASP ZAP)**: Khởi chạy container tạm thời, cấu hình quyền ghi báo cáo (`chown 1000:1000`) và thực hiện quét động baseline API/Web.
 6. **Job 6: Pipeline Summary (Audit Mode)**: Tổng hợp kết quả quét toàn diện phục vụ kiểm toán.
 7. **Job 7: Security Quality Gate**: Đánh giá dựa trên chính sách `security-policy.json` và danh sách ngoại lệ `exceptions.json`. Hỗ trợ 2 chế độ:
    - `audit`: Cảnh báo vi phạm nhưng không chặn pipeline (exit 0).
