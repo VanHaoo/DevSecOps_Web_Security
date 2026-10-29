@@ -29,47 +29,113 @@ Dự án xây dựng một **ứng dụng Web quản lý sản phẩm bằng Fla
 | SBOM | CycloneDX, tạo bằng Trivy |
 | CI/CD | GitHub Actions, Security Quality Gate |
 
-## 2. Cấu trúc repository
+## 2. Cấu trúc repository đầy đủ
+
+Dưới đây là **toàn bộ 86 file đang được Git theo dõi** trên nhánh `master` tại thời điểm rà soát. Cây đã mở rộng đến tên file cụ thể, thay vì chỉ liệt kê các thư mục chính.
 
 ```text
 DevSecOps_Web_Security/
-├── .github/workflows/
-│   └── devsecops-pipeline.yml      # Pipeline GitHub Actions (8 jobs)
-├── app/
-│   ├── blueprints/
-│   │   ├── admin/                 # Quản trị sản phẩm và người dùng
-│   │   ├── auth/                  # Đăng ký, đăng nhập, hồ sơ
-│   │   ├── main/                  # Trang chủ và /health
-│   │   └── products/              # Danh sách, tìm kiếm, chi tiết
-│   ├── static/                    # CSS
-│   ├── templates/                 # Giao diện Jinja2
-│   ├── __init__.py                # Application Factory, security headers
-│   ├── forms.py                   # Form validation, CSRF
-│   └── models.py                  # User, Product
-├── docs/
-│   └── architecture.md            # Mô tả kiến trúc
-├── evidence/
-│   ├── remediation/
-│   │   ├── baseline_immutable/    # Báo cáo trước khắc phục
-│   │   └── rescan/                # Báo cáo quét lại sau khắc phục
-│   └── quality-gate/
-│       └── regression_test/       # Minh chứng kiểm thử hồi quy Gate
-├── scripts/
+├── .github/  # GitHub Actions
+│   └── workflows/
+│       └── devsecops-pipeline.yml
+├── app/  # Ứng dụng Flask
+│   ├── blueprints/  # Các nhóm chức năng Flask
+│   │   ├── admin/
+│   │   │   ├── __init__.py
+│   │   │   └── routes.py
+│   │   ├── auth/
+│   │   │   ├── __init__.py
+│   │   │   └── routes.py
+│   │   ├── main/
+│   │   │   ├── __init__.py
+│   │   │   └── routes.py
+│   │   ├── products/
+│   │   │   ├── __init__.py
+│   │   │   └── routes.py
+│   │   └── __init__.py
+│   ├── static/  # Tài nguyên tĩnh
+│   │   └── css/
+│   │       └── style.css
+│   ├── templates/  # Giao diện HTML/Jinja2
+│   │   ├── admin/
+│   │   │   ├── dashboard.html
+│   │   │   ├── product_form.html
+│   │   │   └── users.html
+│   │   ├── auth/
+│   │   │   ├── login.html
+│   │   │   ├── profile.html
+│   │   │   └── register.html
+│   │   ├── main/
+│   │   │   └── index.html
+│   │   ├── products/
+│   │   │   ├── detail.html
+│   │   │   └── list.html
+│   │   └── base.html
+│   ├── __init__.py  # Application Factory và security headers
+│   ├── forms.py  # Kiểm tra dữ liệu nhập, CSRF
+│   └── models.py  # Mô hình User và Product
+├── docs/  # Tài liệu kiến trúc
+│   └── architecture.md
+├── evidence/  # Minh chứng thực nghiệm (được lưu trong Git)
+│   ├── quality-gate/  # Minh chứng đánh giá Gate
+│   │   └── regression_test/  # Dữ liệu kiểm thử hồi quy PASS/FAIL/PASS
+│   │       ├── gate-partA-secure.json
+│   │       ├── gate-partA-secure.md
+│   │       ├── gate-partB-regression-fail.json
+│   │       ├── gate-partB-regression-fail.md
+│   │       ├── gate-partC-restored-result.json
+│   │       ├── gate-partC-restored-summary.md
+│   │       ├── gate-regression-stepA-clean-pass.json
+│   │       ├── gate-regression-stepB-vuln-fail.json
+│   │       ├── gate-regression-stepB-vuln-fail.md
+│   │       ├── gate-regression-stepC-restored-pass.json
+│   │       ├── gitleaks-step1-clean.json
+│   │       ├── gitleaks-step3-vuln.json
+│   │       └── gitleaks-step5-restored.json
+│   └── remediation/  # Minh chứng trước và sau khắc phục
+│       ├── baseline_immutable/  # Bản gốc trước khắc phục — không chỉnh sửa
+│       │   ├── gitleaks-report.json
+│       │   ├── sbom-fs-cyclonedx.json
+│       │   ├── sbom-image-cyclonedx.json
+│       │   ├── security-summary.md
+│       │   ├── semgrep-report.json
+│       │   ├── tool-versions.json
+│       │   ├── trivy-fs-report.json
+│       │   ├── trivy-image-report.json
+│       │   ├── zap-report.html
+│       │   ├── zap-report.json
+│       │   └── zap.yaml
+│       └── rescan/  # Báo cáo quét lại sau khắc phục
+│           ├── gitleaks-after.json
+│           ├── sbom-cyclonedx-after.json
+│           ├── security-gate-result.json
+│           ├── security-gate-summary.md
+│           ├── semgrep-after.json
+│           ├── trivy-fs-after.json
+│           ├── trivy-image-after.json
+│           ├── zap-report-after.html
+│           ├── zap-report-after.json
+│           └── zap.yaml
+├── scripts/  # Các script chạy công cụ và Security Gate
 │   ├── run_dast_scan.ps1
 │   ├── run_security_scans.ps1
 │   ├── run_security_scans.sh
-│   ├── security_gate.py
-│   └── seed_db.py
-├── security/
-│   ├── gitleaks/gitleaks.toml
+│   ├── security_gate.py  # Security Quality Gate
+│   └── seed_db.py  # Tạo tài khoản và sản phẩm mẫu
+├── security/  # Cấu hình bảo mật và chính sách
+│   ├── gitleaks/
+│   │   └── gitleaks.toml  # Quy tắc quét secret
 │   ├── policies/
-│   │   ├── security-policy.json
-│   │   ├── exceptions.json
+│   │   ├── exceptions-approved.json  # Dữ liệu kịch bản kiểm thử, không phải phê duyệt thực tế
 │   │   ├── exceptions-empty.json
-│   │   └── exceptions-approved.json
-│   ├── semgrep/semgrep-rules.yaml
-│   └── zap/zap-baseline.conf
-├── tests/
+│   │   ├── exceptions.json  # Ngoại lệ chính thức — chưa phê duyệt
+│   │   └── security-policy.json  # Ngưỡng đánh giá Gate
+│   ├── semgrep/
+│   │   └── semgrep-rules.yaml  # Quy tắc Semgrep
+│   └── zap/
+│       └── zap-baseline.conf  # Cấu hình ZAP baseline
+├── tests/  # Kiểm thử tự động
+│   ├── __init__.py
 │   ├── conftest.py
 │   ├── test_app.py
 │   ├── test_remediation_security.py
@@ -77,16 +143,16 @@ DevSecOps_Web_Security/
 ├── .env.example
 ├── .gitignore
 ├── .gitleaksignore
-├── Dockerfile                     # Đặt ở thư mục gốc
-├── compose.yaml                   # Đặt ở thư mục gốc
-├── pyproject.toml
-├── requirements.txt
-├── requirements-dev.txt
-├── wsgi.py
-└── README.md
+├── compose.yaml  # Chạy container web và volume SQLite
+├── Dockerfile  # Build image ứng dụng Flask
+├── pyproject.toml  # Cấu hình pytest
+├── README.md  # Hướng dẫn dự án
+├── requirements-dev.txt  # Thư viện phát triển/pytest
+├── requirements.txt  # Thư viện production
+└── wsgi.py  # Entry point Gunicorn/Flask
 ```
 
-Các thư mục `evidence/security-tooling/`, `evidence/dast/`, `evidence/ci-run/` và `evidence/test-reports/` là **đầu ra tự sinh** khi chạy công cụ hoặc CI; chúng được loại khỏi Git theo `.gitignore` và có thể chưa tồn tại sau khi clone. Hai file `Dockerfile` và `compose.yaml` được giữ ở **thư mục gốc** để Docker Compose build theo đường dẫn hiện tại.
+**Lưu ý về thư mục tự sinh:** `evidence/security-tooling/`, `evidence/dast/`, `evidence/ci-run/`, `evidence/test-reports/`, `instance/`, `.venv/` và các thư mục cache có thể xuất hiện trên máy khi chạy ứng dụng hoặc các công cụ. Các đường dẫn này được Git bỏ qua; chúng **không phải phần thiếu của repository**. Git không theo dõi thư mục rỗng. `Dockerfile` và `compose.yaml` chủ động đặt tại thư mục gốc để chạy `docker compose up -d --build web` theo cấu hình hiện tại.
 
 ## 3. Cài đặt và chạy bằng Docker (khuyến nghị)
 
