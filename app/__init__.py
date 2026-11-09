@@ -52,10 +52,7 @@ def create_app(config_name=None):
     login_manager.login_message_category = 'warning'
 
     # Register blueprints
-    from app.blueprints.main.routes import main_bp
-    from app.blueprints.auth.routes import auth_bp
-    from app.blueprints.products.routes import products_bp
-    from app.blueprints.admin.routes import admin_bp
+    from app.blueprints import main_bp, auth_bp, products_bp, admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')

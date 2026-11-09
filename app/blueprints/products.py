@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, abort
+from app import db
 from app.models import Product
 
-products_bp = Blueprint('products', __name__, template_folder='../../templates/products')
+products_bp = Blueprint('products', __name__)
 
 
 @products_bp.route('/')
@@ -46,7 +47,3 @@ def product_detail(product_id):
     if product is None:
         abort(404)
     return render_template('products/detail.html', product=product)
-
-
-# Import db at module level for category query
-from app import db  # noqa: E402

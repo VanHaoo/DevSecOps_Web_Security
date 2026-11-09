@@ -4,7 +4,7 @@ from app import db
 from app.models import User
 from app.forms import RegistrationForm, LoginForm, ProfileForm
 
-auth_bp = Blueprint('auth', __name__, template_folder='../../templates/auth')
+auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])

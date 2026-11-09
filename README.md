@@ -40,19 +40,11 @@ DevSecOps_Web_Security/
 │       └── devsecops-pipeline.yml
 ├── app/  # Ứng dụng Flask
 │   ├── blueprints/  # Các nhóm chức năng Flask
-│   │   ├── admin/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── auth/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── main/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── products/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   └── __init__.py
+│   │   ├── __init__.py  # Xuất các blueprint
+│   │   ├── admin.py  # Quản trị viên (Dashboard, CRUD sản phẩm, User list)
+│   │   ├── auth.py  # Xác thực (Đăng ký, Đăng nhập, Đăng xuất, Profile)
+│   │   ├── main.py  # Trang chủ và Health check endpoint
+│   │   └── products.py  # Danh mục và chi tiết sản phẩm
 │   ├── static/  # Tài nguyên tĩnh
 │   │   └── css/
 │   │       └── style.css
@@ -117,9 +109,8 @@ DevSecOps_Web_Security/
 │           ├── zap-report-after.json
 │           └── zap.yaml
 ├── scripts/  # Các script chạy công cụ và Security Gate
-│   ├── run_dast_scan.ps1
-│   ├── run_security_scans.ps1
-│   ├── run_security_scans.sh
+│   ├── run_security_scans.ps1  # Chạy công cụ kiểm thử (Static, DAST, All) trên Windows
+│   ├── run_security_scans.sh  # Chạy công cụ kiểm thử (Static, DAST, All) trên Linux
 │   ├── security_gate.py  # Security Quality Gate
 │   └── seed_db.py  # Tạo tài khoản và sản phẩm mẫu
 ├── security/  # Cấu hình bảo mật và chính sách
