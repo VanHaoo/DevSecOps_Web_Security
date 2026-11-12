@@ -248,7 +248,7 @@ Dự án có **62 test cases** được tổ chức theo nhóm:
 .\venv\Scripts\pytest --cov=app --cov-report=term-missing
 ```
 
-**Kết quả hiện tại (branch `refactor/consolidate-small-files`):** 62/62 tests passed — Coverage: **93%**.
+**Kết quả hiện tại (nhánh `master`):** 62/62 tests passed — Coverage: **93%**.
 
 > Coverage thấp hơn một chút do các nhánh production trong `app/__init__.py` và `auth.py` không được kích hoạt trong môi trường testing (đây là hành vi đúng — code path đó chỉ chạy khi `FLASK_ENV=production`).
 
