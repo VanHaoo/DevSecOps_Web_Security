@@ -16,3 +16,4 @@ def health():
         'status': 'healthy',
         'service': 'DevSecOps Web Security Lab'
     }), 200
+

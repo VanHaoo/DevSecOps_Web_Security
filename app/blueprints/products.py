@@ -47,3 +47,4 @@ def product_detail(product_id):
     if product is None:
         abort(404)
     return render_template('products/detail.html', product=product)
+

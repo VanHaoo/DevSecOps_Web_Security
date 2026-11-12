@@ -1,5 +1,6 @@
 """Tests for health endpoint, authentication, authorization, products, and input validation."""
 import json
+import re
 from tests.conftest import login, logout
 
 
@@ -86,11 +87,73 @@ class TestLogin:
         assert 'Tên đăng nhập hoặc mật khẩu không đúng' in response.data.decode('utf-8')
 
     def test_logout(self, client, regular_user):
-        """TC-08: Logout works correctly."""
+        """TC-08: Logout works correctly via POST."""
         login(client, 'testuser', 'Test@123456')
         response = logout(client)
         assert response.status_code == 200
         assert 'Đã đăng xuất' in response.data.decode('utf-8')
+
+    def test_get_logout_rejected_and_state_preserved(self, client, regular_user):
+        """TC-08b: GET logout must be rejected with 405 Method Not Allowed and preserve authentication."""
+        login(client, 'testuser', 'Test@123456')
+        # Attempt logout via GET
+        response = client.get('/auth/logout')
+        assert response.status_code == 405
+
+        # Verify user is still authenticated
+        profile_resp = client.get('/auth/profile')
+        assert profile_resp.status_code == 200
+        assert 'testuser' in profile_resp.data.decode('utf-8')
+
+    def test_open_redirect_safe_internal_targets(self, client, regular_user):
+        """TC-08c: Safe internal relative paths are permitted on login redirect."""
+        # First login: redirect to /auth/profile
+        resp = client.post('/auth/login?next=/auth/profile', data={
+            'username': 'testuser',
+            'password': 'Test@123456'
+        })
+        assert resp.status_code == 302, f'Expected 302, got {resp.status_code}'
+        assert resp.headers['Location'] == '/auth/profile', (
+            f"Expected '/auth/profile', got {resp.headers.get('Location')}"
+        )
+
+        # Logout so the second login is not short-circuited by is_authenticated guard
+        client.post('/auth/logout')
+
+        # Second login: redirect to /products
+        resp2 = client.post('/auth/login?next=/products', data={
+            'username': 'testuser',
+            'password': 'Test@123456'
+        })
+        assert resp2.status_code == 302, f'Expected 302, got {resp2.status_code}'
+        assert resp2.headers['Location'] == '/products', (
+            f"Expected '/products', got {resp2.headers.get('Location')}"
+        )
+
+    def test_open_redirect_malicious_targets_blocked(self, client, regular_user):
+        """TC-08d: Open redirect attempts are rejected and fallback to home page."""
+        malicious_urls = [
+            'https://evil.com',
+            'http://evil.com',
+            '//evil.com',
+            '//evil.com/path',
+            '/\\evil.com',
+            '\\evil.com',
+            'javascript:alert(1)',
+            'data:text/html;base64,PHNjcmlwdD4=',
+            'http://attacker.com/steal?token=123',
+            'https://google.com@attacker.com',
+            r'/products\evil.com',
+            '/\x00evil.com',
+        ]
+        for bad_url in malicious_urls:
+            resp = client.post(f'/auth/login?next={bad_url}', data={
+                'username': 'testuser',
+                'password': 'Test@123456'
+            })
+            assert resp.status_code == 302
+            # Location must fallback to home page '/' or main.index
+            assert resp.headers['Location'] in ('/', 'http://localhost/')
 
 
 # ============================================================
@@ -285,6 +348,64 @@ class TestInputValidation:
         assert response.status_code == 200
         assert 'Thêm sản phẩm thành công' not in response.data.decode('utf-8')
 
+    def test_add_product_zero_price_and_stock_is_valid(self, client, admin_user):
+        """TC-26b: Product with price=0 (e.g. giveaway) and stock=0 (out-of-stock) is valid."""
+        login(client, 'admin', 'Admin@123456')
+        response = client.post('/admin/products/add', data={
+            'name': 'Free Out Of Stock Sample',
+            'description': 'Valid zero price and zero stock item',
+            'price': 0,
+            'category': 'Freebie',
+            'stock': 0,
+            'image_url': ''
+        }, follow_redirects=True)
+        assert response.status_code == 200
+        assert 'Thêm sản phẩm thành công' in response.data.decode('utf-8')
+
+    def test_add_product_negative_stock_fails(self, client, admin_user):
+        """TC-26c: Product with negative stock fails validation."""
+        login(client, 'admin', 'Admin@123456')
+        response = client.post('/admin/products/add', data={
+            'name': 'Negative Stock Product',
+            'description': 'Invalid stock',
+            'price': 10000,
+            'category': '',
+            'stock': -1,
+            'image_url': ''
+        }, follow_redirects=True)
+        assert response.status_code == 200
+        assert 'Thêm sản phẩm thành công' not in response.data.decode('utf-8')
+
+    def test_add_product_missing_price_or_stock_fails(self, client, admin_user):
+        """TC-26d: Product with missing price or stock is rejected."""
+        login(client, 'admin', 'Admin@123456')
+        # Missing price
+        resp1 = client.post('/admin/products/add', data={
+            'name': 'No Price',
+            'price': '',
+            'stock': 10
+        }, follow_redirects=True)
+        assert 'Thêm sản phẩm thành công' not in resp1.data.decode('utf-8')
+
+        # Missing stock
+        resp2 = client.post('/admin/products/add', data={
+            'name': 'No Stock',
+            'price': 10000,
+            'stock': ''
+        }, follow_redirects=True)
+        assert 'Thêm sản phẩm thành công' not in resp2.data.decode('utf-8')
+
+    def test_add_product_invalid_data_types_fails(self, client, admin_user):
+        """TC-26e: Non-numeric price or stock values fail type conversion validation."""
+        login(client, 'admin', 'Admin@123456')
+        resp = client.post('/admin/products/add', data={
+            'name': 'String Price Product',
+            'price': 'one-hundred',
+            'stock': 'fifty'
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+        assert 'Thêm sản phẩm thành công' not in resp.data.decode('utf-8')
+
 
 # ============================================================
 # 9. Error Cases
@@ -345,3 +466,124 @@ class TestSecurityControls:
         assert regular_user.password_hash.startswith(('scrypt:', 'pbkdf2:'))
         assert regular_user.check_password('Test@123456') is True
         assert regular_user.check_password('WrongPassword') is False
+
+
+# ============================================================
+# 11. Comprehensive CSRF Protection Verification
+# ============================================================
+
+class TestCSRFProtection:
+    """Rigorous verification of CSRF protection across sensitive state-changing endpoints."""
+
+    def _extract_token(self, html):
+        """Helper to extract CSRF token from HTML."""
+        match = re.search(r'name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']', html)
+        if not match:
+            match = re.search(r'value=["\']([^"\']+)["\'][^>]*name=["\']csrf_token["\']', html)
+        return match.group(1) if match else None
+
+    def test_csrf_blocks_post_without_token_on_all_critical_routes(self, app, regular_user, admin_user, sample_product):
+        """TC-33: POST without CSRF token is blocked with HTTP 400 on critical routes."""
+        app.config['WTF_CSRF_ENABLED'] = True
+        client = app.test_client()
+
+        # 1. Login
+        resp_login = client.post('/auth/login', data={'username': 'testuser', 'password': 'Test@123456'})
+        assert resp_login.status_code == 400
+
+        # 2. Registration
+        resp_reg = client.post('/auth/register', data={
+            'username': 'attacker',
+            'email': 'attacker@test.com',
+            'password': 'Password@123',
+            'confirm_password': 'Password@123'
+        })
+        assert resp_reg.status_code == 400
+
+        # 3. Logout
+        resp_logout = client.post('/auth/logout')
+        assert resp_logout.status_code == 400
+
+        # 4. Add product
+        resp_add = client.post('/admin/products/add', data={
+            'name': 'Hacked Product',
+            'price': 100,
+            'stock': 1
+        })
+        assert resp_add.status_code == 400
+
+        # 5. Delete product
+        resp_del = client.post(f'/admin/products/{sample_product.id}/delete')
+        assert resp_del.status_code == 400
+
+        app.config['WTF_CSRF_ENABLED'] = False
+
+    def test_csrf_blocks_post_with_invalid_token(self, app):
+        """TC-34: POST with forged or tampered CSRF token is rejected with HTTP 400."""
+        app.config['WTF_CSRF_ENABLED'] = True
+        client = app.test_client()
+
+        # Initial GET to establish session cookie
+        client.get('/auth/login')
+
+        response = client.post('/auth/login', data={
+            'username': 'testuser',
+            'password': 'Test@123456',
+            'csrf_token': 'forged_or_expired_token_12345'
+        })
+        assert response.status_code == 400
+        app.config['WTF_CSRF_ENABLED'] = False
+
+    def test_csrf_allows_post_with_valid_token_for_login_and_logout(self, app, regular_user):
+        """TC-35: Legitimate POST containing valid CSRF token succeeds for login and logout."""
+        app.config['WTF_CSRF_ENABLED'] = True
+        client = app.test_client()
+
+        # 1. GET login page to obtain valid CSRF token
+        get_resp = client.get('/auth/login')
+        token = self._extract_token(get_resp.data.decode('utf-8'))
+        assert token is not None
+
+        # 2. POST login with valid token
+        post_resp = client.post('/auth/login', data={
+            'username': 'testuser',
+            'password': 'Test@123456',
+            'csrf_token': token
+        }, follow_redirects=True)
+        assert post_resp.status_code == 200
+        assert 'Đăng nhập thành công' in post_resp.data.decode('utf-8')
+
+        # 3. GET profile/page to obtain fresh CSRF token from navbar logout form
+        base_resp = client.get('/')
+        logout_token = self._extract_token(base_resp.data.decode('utf-8'))
+        assert logout_token is not None
+
+        # 4. POST logout with valid token
+        logout_resp = client.post('/auth/logout', data={
+            'csrf_token': logout_token
+        }, follow_redirects=True)
+        assert logout_resp.status_code == 200
+        assert 'Đã đăng xuất' in logout_resp.data.decode('utf-8')
+
+        app.config['WTF_CSRF_ENABLED'] = False
+
+    def test_csrf_allows_valid_token_on_register(self, app):
+        """TC-36: Legitimate POST containing valid CSRF token succeeds for registration."""
+        app.config['WTF_CSRF_ENABLED'] = True
+        client = app.test_client()
+
+        get_resp = client.get('/auth/register')
+        token = self._extract_token(get_resp.data.decode('utf-8'))
+        assert token is not None
+
+        post_resp = client.post('/auth/register', data={
+            'username': 'legit_user',
+            'email': 'legit@test.com',
+            'password': 'LegitPassword@123',
+            'confirm_password': 'LegitPassword@123',
+            'csrf_token': token
+        }, follow_redirects=True)
+        assert post_resp.status_code == 200
+        assert 'Đăng ký thành công' in post_resp.data.decode('utf-8')
+
+        app.config['WTF_CSRF_ENABLED'] = False

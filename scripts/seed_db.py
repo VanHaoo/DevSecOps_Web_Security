@@ -20,12 +20,20 @@ def seed_database():
             return
 
         # Create admin user
+        admin_pass = os.environ.get('ADMIN_INITIAL_PASSWORD')
+        if not admin_pass:
+            if os.environ.get('FLASK_ENV') == 'production':
+                raise ValueError(
+                    "CRITICAL SECURITY ERROR: ADMIN_INITIAL_PASSWORD environment variable must be set "
+                    "before seeding the database in production. Fixed default passwords are prohibited."
+                )
+            admin_pass = 'Admin@123456'
         admin = User(
             username='admin',
             email='admin@example.com',
             is_admin=True
         )
-        admin.set_password('Admin@123456')
+        admin.set_password(admin_pass)
         db.session.add(admin)
 
         # Create sample users

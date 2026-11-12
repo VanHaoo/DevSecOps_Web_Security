@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Script tự động thực thi các công cụ kiểm tra an toàn thông tin (DevSecOps) và xuất SBOM.
 .DESCRIPTION
