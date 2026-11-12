@@ -7,7 +7,7 @@ services:
       - "127.0.0.1:5000:5000"
     environment:
       - SECRET_KEY=${SECRET_KEY:?Vui lòng cấu hình SECRET_KEY an toàn trong file .env hoặc biến môi trường (xem .env.example)}
-      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-Admin@123456}
       - DATABASE_URL=sqlite:///app.db
       - FLASK_ENV=production
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-False}

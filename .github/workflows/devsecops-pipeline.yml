@@ -223,6 +223,10 @@ jobs:
     needs: [unit-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      SECRET_KEY: "ci-devsecops-pipeline-ephemeral-secret-key-32chars"
+      ADMIN_INITIAL_PASSWORD: "Admin@CI123456"
+      SESSION_COOKIE_SECURE: "False"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -233,8 +237,6 @@ jobs:
           sudo chown -R 1000:1000 evidence/dast
 
       - name: Start Application Container with Docker Compose
-        env:
-          SECRET_KEY: "ci-devsecops-pipeline-ephemeral-secret-key-32chars"
         run: |
           docker compose up -d --build
 
