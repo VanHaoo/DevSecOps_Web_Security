@@ -22,7 +22,7 @@ USER appuser
 
 # Environment variables
 ENV FLASK_ENV=production
-ENV SECRET_KEY=change-this-in-production
+# Default to False for local container HTTP testing; override to True when deployed behind HTTPS proxy
 ENV SESSION_COOKIE_SECURE=False
 
 EXPOSE 5000

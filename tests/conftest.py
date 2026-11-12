@@ -71,5 +71,5 @@ def login(client, username, password):
 
 
 def logout(client):
-    """Helper function to log out."""
-    return client.get('/auth/logout', follow_redirects=True)
+    """Helper function to log out securely via POST."""
+    return client.post('/auth/logout', follow_redirects=True)

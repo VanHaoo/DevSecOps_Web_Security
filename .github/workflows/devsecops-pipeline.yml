@@ -233,6 +233,8 @@ jobs:
           sudo chown -R 1000:1000 evidence/dast
 
       - name: Start Application Container with Docker Compose
+        env:
+          SECRET_KEY: "ci-devsecops-pipeline-ephemeral-secret-key-32chars"
         run: |
           docker compose up -d --build
 

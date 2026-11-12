@@ -120,6 +120,50 @@ class TestSecretKeyConfiguration:
             else:
                 os.environ.pop('SECRET_KEY', None)
 
+    def test_production_rejects_missing_or_insecure_secret_key(self):
+        """SEC-08b: Production mode raises ValueError if SECRET_KEY is missing or uses an insecure default."""
+        old_key = os.environ.get('SECRET_KEY')
+        insecure_keys = [
+            '',
+            'dev-secret-key-change-in-production',
+            'change-this-in-production',
+            'change-this-to-a-random-secret-key',
+            'devsecops-lab-secret-key-2024'
+        ]
+        try:
+            for bad_key in insecure_keys:
+                if bad_key:
+                    os.environ['SECRET_KEY'] = bad_key
+                else:
+                    os.environ.pop('SECRET_KEY', None)
+
+                with pytest.raises(ValueError, match="SECRET_KEY"):
+                    create_app('production')
+        finally:
+            if old_key is not None:
+                os.environ['SECRET_KEY'] = old_key
+            else:
+                os.environ.pop('SECRET_KEY', None)
+
+    def test_production_session_cookie_secure_defaults_to_true(self):
+        """SEC-08c: In production mode, SESSION_COOKIE_SECURE defaults to True (HTTPS security)."""
+        old_key = os.environ.get('SECRET_KEY')
+        old_sec = os.environ.get('SESSION_COOKIE_SECURE')
+        try:
+            os.environ['SECRET_KEY'] = 'strong-production-key-for-test-32chars'
+            os.environ.pop('SESSION_COOKIE_SECURE', None)
+            app = create_app('production')
+            assert app.config['SESSION_COOKIE_SECURE'] is True
+        finally:
+            if old_key is not None:
+                os.environ['SECRET_KEY'] = old_key
+            else:
+                os.environ.pop('SECRET_KEY', None)
+            if old_sec is not None:
+                os.environ['SESSION_COOKIE_SECURE'] = old_sec
+            else:
+                os.environ.pop('SESSION_COOKIE_SECURE', None)
+
 
 class TestSubresourceIntegrity:
     """Verify SRI attributes on external CDN dependencies in HTML templates."""

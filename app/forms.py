@@ -4,7 +4,7 @@ from wtforms import (
     FloatField, IntegerField, EmailField
 )
 from wtforms.validators import (
-    DataRequired, Length, Email, EqualTo, ValidationError,
+    DataRequired, InputRequired, Length, Email, EqualTo, ValidationError,
     NumberRange, Optional
 )
 from app.models import User
@@ -70,7 +70,7 @@ class ProductForm(FlaskForm):
         Length(max=2000, message='Mô tả không quá 2000 ký tự.')
     ])
     price = FloatField('Giá (VNĐ)', validators=[
-        DataRequired(message='Vui lòng nhập giá.'),
+        InputRequired(message='Vui lòng nhập giá.'),
         NumberRange(min=0, message='Giá phải lớn hơn hoặc bằng 0.')
     ])
     category = StringField('Danh mục', validators=[
@@ -78,7 +78,7 @@ class ProductForm(FlaskForm):
         Length(max=100, message='Danh mục không quá 100 ký tự.')
     ])
     stock = IntegerField('Số lượng tồn kho', validators=[
-        DataRequired(message='Vui lòng nhập số lượng.'),
+        InputRequired(message='Vui lòng nhập số lượng.'),
         NumberRange(min=0, message='Số lượng phải lớn hơn hoặc bằng 0.')
     ])
     image_url = StringField('URL hình ảnh', validators=[

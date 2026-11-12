@@ -17,10 +17,38 @@ def create_app(config_name=None):
     # Ensure instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)
 
-    # Default configuration
-    app.config['SECRET_KEY'] = os.environ.get(
-        'SECRET_KEY', 'dev-secret-key-change-in-production'
-    )
+    # Environment mode detection
+    env = os.environ.get('FLASK_ENV', 'development').lower()
+    is_prod = (config_name == 'production') or (env == 'production')
+
+    # Security: SECRET_KEY configuration
+    secret_key = os.environ.get('SECRET_KEY')
+    insecure_defaults = {
+        'dev-secret-key-change-in-production',
+        'change-this-in-production',
+        'change-this-to-a-random-secret-key',
+        'devsecops-lab-secret-key-2024'
+    }
+
+    if config_name == 'testing':
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.config['WTF_CSRF_ENABLED'] = False
+        # Dynamic test key avoids hardcoded secret literal (REM-08)
+        app.config['SECRET_KEY'] = (
+            os.environ.get('TEST_SECRET_KEY') or secrets.token_hex(32)
+        )
+    elif is_prod:
+        if not secret_key or secret_key.strip() in insecure_defaults:
+            raise ValueError(
+                "CRITICAL SECURITY ERROR: Missing or insecure SECRET_KEY in production. "
+                "A strong SECRET_KEY must be configured via the SECRET_KEY environment variable."
+            )
+        app.config['SECRET_KEY'] = secret_key
+    else:
+        # Development mode fallback (dynamic high-entropy key if none provided)
+        app.config['SECRET_KEY'] = secret_key or secrets.token_hex(32)
+
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
         'DATABASE_URL', 'sqlite:///app.db'
     )
@@ -29,18 +57,19 @@ def create_app(config_name=None):
     # Session & Cookie Security (REM-06)
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_SECURE'] = (
-        os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
-    )
-
-    # Override with test config if provided
     if config_name == 'testing':
-        app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        app.config['WTF_CSRF_ENABLED'] = False
-        # Dynamic test key avoids hardcoded secret literal (REM-08)
-        app.config['SECRET_KEY'] = (
-            os.environ.get('TEST_SECRET_KEY') or secrets.token_hex(32)
+        app.config['SESSION_COOKIE_SECURE'] = (
+            os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
+        )
+    elif is_prod:
+        # In production over HTTPS, SESSION_COOKIE_SECURE defaults to True.
+        # Set SESSION_COOKIE_SECURE=False via environment for HTTP lab testing.
+        app.config['SESSION_COOKIE_SECURE'] = (
+            os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() in ('true', '1')
+        )
+    else:
+        app.config['SESSION_COOKIE_SECURE'] = (
+            os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
         )
 
     # Initialize extensions
@@ -52,10 +81,7 @@ def create_app(config_name=None):
     login_manager.login_message_category = 'warning'
 
     # Register blueprints
-    from app.blueprints.main.routes import main_bp
-    from app.blueprints.auth.routes import auth_bp
-    from app.blueprints.products.routes import products_bp
-    from app.blueprints.admin.routes import admin_bp
+    from app.blueprints import main_bp, auth_bp, products_bp, admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')

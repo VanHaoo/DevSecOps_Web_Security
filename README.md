@@ -10,10 +10,11 @@ Dự án xây dựng một **ứng dụng Web quản lý sản phẩm bằng Fla
 
 **Ứng dụng Web**
 
-- Đăng ký, đăng nhập, đăng xuất và quản lý hồ sơ người dùng.
+- Đăng ký, đăng nhập, **đăng xuất bảo mật (POST + CSRF)** và quản lý hồ sơ người dùng.
 - Xem, tìm kiếm, lọc theo danh mục và xem chi tiết sản phẩm.
 - Quản trị sản phẩm (thêm, sửa, xóa), theo dõi số lượng tồn kho và xem danh sách người dùng.
 - Phân quyền theo vai trò **Admin/User**; kiểm tra đầu vào, CSRF token, password hashing và các HTTP security headers.
+- **Open Redirect protection:** tham số `next` được xác thực — chỉ chấp nhận đường dẫn nội bộ.
 
 **Công nghệ chính**
 
@@ -31,7 +32,7 @@ Dự án xây dựng một **ứng dụng Web quản lý sản phẩm bằng Fla
 
 ## 2. Cấu trúc repository đầy đủ
 
-Dưới đây là **toàn bộ 86 file đang được Git theo dõi** trên nhánh `master` tại thời điểm rà soát. Cây đã mở rộng đến tên file cụ thể, thay vì chỉ liệt kê các thư mục chính.
+Dưới đây là **toàn bộ file đang được Git theo dõi** trên nhánh hiện tại. Cây đã mở rộng đến tên file cụ thể.
 
 ```text
 DevSecOps_Web_Security/
@@ -39,20 +40,12 @@ DevSecOps_Web_Security/
 │   └── workflows/
 │       └── devsecops-pipeline.yml
 ├── app/  # Ứng dụng Flask
-│   ├── blueprints/  # Các nhóm chức năng Flask
-│   │   ├── admin/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── auth/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── main/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── products/
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   └── __init__.py
+│   ├── blueprints/  # Các nhóm chức năng Flask (flat module, không dùng sub-package)
+│   │   ├── __init__.py  # Xuất tất cả 4 blueprints
+│   │   ├── admin.py     # Quản trị viên (Dashboard, CRUD sản phẩm, User list)
+│   │   ├── auth.py      # Xác thực (Đăng ký, Đăng nhập, Đăng xuất POST, Profile, is_safe_url)
+│   │   ├── main.py      # Trang chủ và Health check endpoint
+│   │   └── products.py  # Danh mục và chi tiết sản phẩm
 │   ├── static/  # Tài nguyên tĩnh
 │   │   └── css/
 │   │       └── style.css
@@ -70,10 +63,10 @@ DevSecOps_Web_Security/
 │   │   ├── products/
 │   │   │   ├── detail.html
 │   │   │   └── list.html
-│   │   └── base.html
-│   ├── __init__.py  # Application Factory và security headers
-│   ├── forms.py  # Kiểm tra dữ liệu nhập, CSRF
-│   └── models.py  # Mô hình User và Product
+│   │   └── base.html  # Layout chung, nút đăng xuất dùng POST form + CSRF token
+│   ├── __init__.py  # Application Factory, security headers, 3-mode SECRET_KEY config
+│   ├── forms.py     # Kiểm tra dữ liệu nhập, CSRF; InputRequired cho price/stock
+│   └── models.py    # Mô hình User và Product
 ├── docs/  # Tài liệu kiến trúc
 │   └── architecture.md
 ├── evidence/  # Minh chứng thực nghiệm (được lưu trong Git)
@@ -117,46 +110,45 @@ DevSecOps_Web_Security/
 │           ├── zap-report-after.json
 │           └── zap.yaml
 ├── scripts/  # Các script chạy công cụ và Security Gate
-│   ├── run_dast_scan.ps1
-│   ├── run_security_scans.ps1
-│   ├── run_security_scans.sh
-│   ├── security_gate.py  # Security Quality Gate
-│   └── seed_db.py  # Tạo tài khoản và sản phẩm mẫu
+│   ├── run_security_scans.ps1  # Chạy Semgrep/Gitleaks/Trivy/ZAP trên Windows (-Type static|dast|all)
+│   ├── run_security_scans.sh   # Chạy Semgrep/Gitleaks/Trivy/ZAP trên Linux (-t static|dast|all)
+│   ├── security_gate.py        # Security Quality Gate
+│   └── seed_db.py              # Tạo tài khoản và sản phẩm mẫu
 ├── security/  # Cấu hình bảo mật và chính sách
 │   ├── gitleaks/
-│   │   └── gitleaks.toml  # Quy tắc quét secret
+│   │   └── gitleaks.toml   # Quy tắc quét secret
 │   ├── policies/
 │   │   ├── exceptions-approved.json  # Dữ liệu kịch bản kiểm thử, không phải phê duyệt thực tế
 │   │   ├── exceptions-empty.json
-│   │   ├── exceptions.json  # Ngoại lệ chính thức — chưa phê duyệt
-│   │   └── security-policy.json  # Ngưỡng đánh giá Gate
+│   │   ├── exceptions.json           # Ngoại lệ chính thức — chưa phê duyệt
+│   │   └── security-policy.json      # Ngưỡng đánh giá Gate
 │   ├── semgrep/
 │   │   └── semgrep-rules.yaml  # Quy tắc Semgrep
 │   └── zap/
-│       └── zap-baseline.conf  # Cấu hình ZAP baseline
+│       └── zap-baseline.conf   # Cấu hình ZAP baseline
 ├── tests/  # Kiểm thử tự động
 │   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_app.py
-│   ├── test_remediation_security.py
-│   └── test_security_gate.py
-├── .env.example
+│   ├── conftest.py                  # Shared fixtures (app, db, client, users, products)
+│   ├── test_app.py                  # Kiểm thử chức năng + bảo mật + CSRF
+│   ├── test_remediation_security.py # Kiểm thử headers, session, SECRET_KEY, SRI
+│   └── test_security_gate.py        # Kiểm thử Security Quality Gate logic
+├── .env.example       # Mẫu biến môi trường (có hướng dẫn tiếng Việt đầy đủ)
 ├── .gitignore
 ├── .gitleaksignore
-├── compose.yaml  # Chạy container web và volume SQLite
-├── Dockerfile  # Build image ứng dụng Flask
-├── pyproject.toml  # Cấu hình pytest
-├── README.md  # Hướng dẫn dự án
+├── compose.yaml       # Chạy container web và volume SQLite
+├── Dockerfile         # Build image ứng dụng Flask (không chứa SECRET_KEY hardcode)
+├── pyproject.toml     # Cấu hình pytest
+├── README.md          # Hướng dẫn dự án
 ├── requirements-dev.txt  # Thư viện phát triển/pytest
-├── requirements.txt  # Thư viện production
-└── wsgi.py  # Entry point Gunicorn/Flask
+├── requirements.txt      # Thư viện production
+└── wsgi.py            # Entry point Gunicorn/Flask
 ```
 
-**Lưu ý về thư mục tự sinh:** `evidence/security-tooling/`, `evidence/dast/`, `evidence/ci-run/`, `evidence/test-reports/`, `instance/`, `.venv/` và các thư mục cache có thể xuất hiện trên máy khi chạy ứng dụng hoặc các công cụ. Các đường dẫn này được Git bỏ qua; chúng **không phải phần thiếu của repository**. Git không theo dõi thư mục rỗng. `Dockerfile` và `compose.yaml` chủ động đặt tại thư mục gốc để chạy `docker compose up -d --build web` theo cấu hình hiện tại.
+**Lưu ý về thư mục tự sinh:** `evidence/security-tooling/`, `evidence/dast/`, `evidence/ci-run/`, `evidence/test-reports/`, `instance/`, `.venv/` và các thư mục cache có thể xuất hiện trên máy khi chạy ứng dụng hoặc các công cụ. Các đường dẫn này được Git bỏ qua; chúng **không phải phần thiếu của repository**.
 
 ## 3. Cài đặt và chạy bằng Docker (khuyến nghị)
 
-**Yêu cầu:** Git, Docker Desktop (hoặc Docker Engine có Docker Compose), Internet khi tải image/thư viện lần đầu. Không cần cài Python và Flask trực tiếp trên máy nếu chỉ chạy website bằng Docker.
+**Yêu cầu:** Git, Docker Desktop (hoặc Docker Engine có Docker Compose), Internet khi tải image/thư viện lần đầu.
 
 ### Bước 1 — Clone dự án
 
@@ -165,26 +157,31 @@ git clone https://github.com/VanHaoo/DevSecOps_Web_Security.git
 cd DevSecOps_Web_Security
 ```
 
-### Bước 2 — Thiết lập khóa phiên cho môi trường chạy
+### Bước 2 — Thiết lập biến môi trường
 
-Sao chép tệp mẫu và thay giá trị `SECRET_KEY` bằng khóa ngẫu nhiên **của riêng máy bạn** (không commit `.env`):
+Sao chép tệp mẫu và điền `SECRET_KEY` bằng khóa ngẫu nhiên **của riêng bạn**:
 
 ```powershell
 Copy-Item .env.example .env
+# Sinh khóa ngẫu nhiên (PowerShell, không cần Python):
 $bytes = New-Object byte[] 48
 [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
 [Convert]::ToBase64String($bytes)
 ```
 
-Lấy chuỗi ngẫu nhiên vừa in ra, mở `.env` và thay giá trị `SECRET_KEY`. Các lệnh trên dùng PowerShell, **không cần cài Python** trên máy chạy Docker. Cấu hình Docker Compose có giá trị fallback dùng cho lab; **không sử dụng fallback đó cho môi trường công khai**.
+Lấy chuỗi vừa in ra, mở `.env` và gán vào `SECRET_KEY`. Xem `.env.example` để biết tất cả biến được hỗ trợ.
+
+> **Production:** `SECRET_KEY` bắt buộc phải có và không được là các giá trị mặc định (`change-this-in-production`, `secret`, v.v.). Ứng dụng sẽ từ chối khởi động nếu thiếu hoặc dùng key không an toàn.
+>
+> **Lab/localhost HTTP:** Thêm `SESSION_COOKIE_SECURE=False` vào `.env` để cookie hoạt động qua HTTP (mặc định `True` trong production).
 
 ### Bước 3 — Build và khởi động
 
 ```powershell
-docker compose up -d --build web
+docker compose up -d --build
 ```
 
-Docker sẽ build ứng dụng với Python và các thư viện trong `requirements.txt`, tạo container `web` và volume `sqlite_data` để lưu cơ sở dữ liệu SQLite.
+Docker build ứng dụng với Python 3.12-slim, tạo container `web` chạy dưới user `appuser` (non-root) và volume `sqlite_data`.
 
 ### Bước 4 — Nạp dữ liệu mẫu
 
@@ -192,14 +189,14 @@ Docker sẽ build ứng dụng với Python và các thư viện trong `requirem
 docker compose exec web python scripts/seed_db.py
 ```
 
-Script tạo **3 tài khoản và 8 sản phẩm mẫu** khi cơ sở dữ liệu chưa có người dùng. Nếu dữ liệu người dùng đã tồn tại, script sẽ bỏ qua để tránh tạo trùng.
+Script tạo **3 tài khoản và 8 sản phẩm mẫu** khi cơ sở dữ liệu chưa có người dùng. Nếu dữ liệu đã tồn tại, script bỏ qua để tránh tạo trùng.
 
 | Vai trò | Tên đăng nhập | Mật khẩu mẫu |
 | --- | --- | --- |
 | Admin | `admin` | `Admin@123456` |
 | User | `user1` | `User@123456` |
 
-> Các tài khoản và mật khẩu này chỉ dùng để thực nghiệm. Không tái sử dụng khi triển khai hệ thống thật.
+> Các tài khoản này chỉ dùng để thực nghiệm. Mật khẩu admin có thể đặt qua biến `ADMIN_INITIAL_PASSWORD` trong môi trường production.
 
 ### Bước 5 — Truy cập và kiểm tra
 
@@ -211,39 +208,74 @@ docker compose ps
 docker compose logs --tail=100 web
 ```
 
-Dừng ứng dụng bằng `docker compose down`. Volume `sqlite_data` vẫn được giữ lại; **`docker compose down -v` sẽ xóa volume và có thể làm mất dữ liệu**.
+Dừng ứng dụng bằng `docker compose down`. Volume `sqlite_data` vẫn được giữ lại; **`docker compose down -v` sẽ xóa volume**.
 
 ## 4. Chạy trực tiếp trên Windows (phát triển/kiểm thử)
 
-Yêu cầu Python 3.12 và Git. Chạy các lệnh sau trong PowerShell tại thư mục dự án:
+Yêu cầu Python 3.12 và Git:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements-dev.txt
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
 
 # Thiết lập cho phiên PowerShell hiện tại
 $env:SECRET_KEY = python -c "import secrets; print(secrets.token_urlsafe(48))"
-$env:DATABASE_URL = "sqlite:///app.db"
+$env:FLASK_ENV = "development"
+$env:SESSION_COOKIE_SECURE = "False"   # localhost HTTP
 
 python scripts/seed_db.py
 python -m flask --app wsgi run --host=127.0.0.1 --port=5000
 ```
 
-Lưu ý: `.env.example` là **tệp mẫu**, không tự động bảo đảm các biến môi trường được nạp khi chạy Python trực tiếp. Ví dụ trên đặt biến môi trường cho phiên PowerShell hiện tại. Máy chủ Flask ở bước này dành cho phát triển, không phải cách triển khai công khai.
+> `SESSION_COOKIE_SECURE=False` cần thiết khi chạy HTTP localhost để cookie đăng nhập hoạt động đúng. Trong production (HTTPS), giữ giá trị mặc định `True`.
 
 ## 5. Kiểm thử tự động
 
-Dự án có **49 test cases**: 32 bài kiểm thử chức năng ứng dụng, 9 bài kiểm thử cơ chế bảo mật và 8 bài kiểm thử Security Quality Gate.
+Dự án có **62 test cases** được tổ chức theo nhóm:
+
+| Nhóm | File | Số test |
+| --- | --- | --- |
+| Chức năng ứng dụng + bảo mật + CSRF | `test_app.py` | 42 |
+| Security headers, session, SECRET_KEY, SRI | `test_remediation_security.py` | 12 |
+| Security Quality Gate | `test_security_gate.py` | 8 |
 
 ```powershell
-python -m pytest tests/ -q
-python -m pytest tests/ --cov=app --cov-report=term-missing
+# Chạy toàn bộ test
+.\venv\Scripts\pytest -v
+
+# Kèm coverage report
+.\venv\Scripts\pytest --cov=app --cov-report=term-missing
 ```
 
-Kết quả GitHub Actions ở commit `6405012b` ngày 28/10/2026: **49/49 tests passed**, **95% coverage**. Đây là kết quả của lần chạy được ghi nhận, không phải cam kết mọi lần chạy trong tương lai đều đạt.
+**Kết quả hiện tại (branch `refactor/consolidate-small-files`):** 62/62 tests passed — Coverage: **93%**.
 
-## 6. GitHub Actions: Quy trình kiểm tra bảo mật
+> Coverage thấp hơn một chút do các nhánh production trong `app/__init__.py` và `auth.py` không được kích hoạt trong môi trường testing (đây là hành vi đúng — code path đó chỉ chạy khi `FLASK_ENV=production`).
+
+## 6. Script kiểm thử bảo mật
+
+Tất cả công cụ bảo mật được tích hợp trong **một script duy nhất** với tham số `-Type`:
+
+```powershell
+# Chạy SAST (Semgrep + Gitleaks + Trivy)
+.\scripts\run_security_scans.ps1 -Type static
+
+# Chạy DAST (khởi động app → ZAP → dừng app)
+.\scripts\run_security_scans.ps1 -Type dast
+
+# Chạy tất cả
+.\scripts\run_security_scans.ps1 -Type all
+```
+
+Trên Linux/macOS:
+
+```bash
+bash scripts/run_security_scans.sh -t static
+bash scripts/run_security_scans.sh -t dast
+bash scripts/run_security_scans.sh -t all
+```
+
+## 7. GitHub Actions: Quy trình kiểm tra bảo mật
 
 Workflow: [`.github/workflows/devsecops-pipeline.yml`](.github/workflows/devsecops-pipeline.yml). Workflow chạy khi push lên `master` hoặc `feature/**`, tạo Pull Request hướng vào `master`, push tag `v*`, hoặc chạy thủ công bằng **Run workflow**.
 
@@ -258,24 +290,24 @@ Workflow: [`.github/workflows/devsecops-pipeline.yml`](.github/workflows/devseco
 | 7. Security Quality Gate | Đối chiếu kết quả quét với chính sách và ngoại lệ |
 | 8. Release & Deployment Gate | Xác nhận quyền phát hành **chỉ khi** Enforce Mode đạt `PASS` |
 
-Các job có quan hệ phụ thuộc nên một số bước có thể chạy song song; Job 4 và 5 phụ thuộc Unit Testing. **Job 8 hiện chỉ kiểm tra điều kiện cho phép phát hành, chưa có thao tác triển khai ứng dụng lên máy chủ/cloud.**
+Các job có quan hệ phụ thuộc; Job 4 và 5 phụ thuộc Unit Testing. **Job 8 hiện chỉ kiểm tra điều kiện cho phép phát hành, chưa có thao tác triển khai lên máy chủ/cloud.**
 
 ### Chế độ của Security Quality Gate
 
-Chính sách được khai báo tại [`security/policies/security-policy.json`](security/policies/security-policy.json), danh sách ngoại lệ chính thức tại [`security/policies/exceptions.json`](security/policies/exceptions.json).
+Chính sách tại [`security/policies/security-policy.json`](security/policies/security-policy.json), ngoại lệ chính thức tại [`security/policies/exceptions.json`](security/policies/exceptions.json).
 
 | Chế độ | Hành vi |
 | --- | --- |
-| `audit` | Thu thập và báo cáo vấn đề. Nếu có vi phạm chính sách, kết quả là `AUDIT_WARNING` nhưng job có thể kết thúc thành công (`exit 0`). **Không cho phép phát hành.** |
-| `enforce` | Nếu vi phạm chưa được xử lý hoặc không có ngoại lệ hợp lệ, Gate trả `FAIL` (`exit 1`) và chặn nhánh phát hành. |
+| `audit` | Thu thập và báo cáo vấn đề. Vi phạm → `AUDIT_WARNING` nhưng job kết thúc `exit 0`. **Không cho phép phát hành.** |
+| `enforce` | Vi phạm chưa xử lý → Gate trả `FAIL` (`exit 1`) và chặn nhánh phát hành. |
 
-Các lần push thông thường chạy ở `audit`. Để kiểm tra `enforce`, vào **Actions → DevSecOps CI/CD & Security Pipeline → Run workflow → gate_mode: enforce**. Việc push tag phát hành `v*` cũng sử dụng `enforce` theo workflow hiện tại.
+Các lần push thông thường chạy ở `audit`. Để kiểm tra `enforce`, vào **Actions → Run workflow → gate_mode: enforce**.
 
-**Quan trọng:** Workflow hiển thị màu xanh ở Audit Mode chỉ chứng minh các bước đã thực thi thành công, **không có nghĩa ứng dụng đã qua Security Quality Gate để phát hành**. File `exceptions-approved.json` phục vụ **bộ dữ liệu kiểm thử**; các ngoại lệ đang ở trạng thái `PENDING_REVIEW` trong `exceptions.json` không được tính là đã phê duyệt.
+**Quan trọng:** Workflow hiển thị màu xanh ở Audit Mode chỉ chứng minh các bước đã thực thi thành công, **không có nghĩa ứng dụng đã qua Security Quality Gate để phát hành**.
 
-## 7. Kết quả thực nghiệm đã lưu
+## 8. Kết quả thực nghiệm đã lưu
 
-Các số liệu sau lấy từ các bản báo cáo lưu trong `evidence/remediation/` và **không phải số liệu trực tiếp của mọi lần chạy CI/CD**:
+Các số liệu sau lấy từ các bản báo cáo lưu trong `evidence/remediation/`:
 
 | Chỉ số | Baseline | Sau khắc phục |
 | --- | ---: | ---: |
@@ -290,21 +322,21 @@ Các số liệu sau lấy từ các bản báo cáo lưu trong `evidence/remedi
 
 - Semgrep ban đầu ghi nhận vấn đề `SECRET_KEY` hardcoded và cấu hình chạy ứng dụng; không có cơ sở kết luận đã sửa được SQL Injection hoặc XSS chỉ từ hai finding này.
 - Kết quả ZAP trước–sau có **phạm vi URL được quét khác nhau**, nên mức giảm số instance không thể quy hoàn toàn cho hoạt động khắc phục.
-- Image sau khắc phục vẫn còn nhiều lỗ hổng từ gói hệ điều hành và thư viện; việc chạy container dưới quyền non-root chỉ là một biện pháp giảm thiểu rủi ro, không tương đương với vá CVE.
+- Image sau khắc phục vẫn còn nhiều lỗ hổng từ gói hệ điều hành; chạy container dưới quyền non-root là biện pháp giảm thiểu rủi ro, không tương đương vá CVE.
 
-Ở lần chạy CI/CD thành công ngày **28/10/2026** ([run #40726692235](https://github.com/VanHaoo/DevSecOps_Web_Security/actions/runs/40726692235)), Security Quality Gate ghi nhận **`AUDIT_WARNING`, 49 vi phạm chính sách và 170 bản ghi CVE trong image**; ZAP ở lần chạy đó có **31 instances**. Đây là **lần quét khác** với báo cáo rescan 26 instances phía trên.
+Ở lần chạy CI/CD thành công ngày **28/10/2026** ([run #40726692235](https://github.com/VanHaoo/DevSecOps_Web_Security/actions/runs/40726692235)), Security Quality Gate ghi nhận **`AUDIT_WARNING`, 49 vi phạm chính sách và 170 bản ghi CVE trong image**.
 
 Các minh chứng được tổ chức tại:
 
 - [`evidence/remediation/baseline_immutable/`](evidence/remediation/baseline_immutable/) — báo cáo gốc trước khắc phục.
 - [`evidence/remediation/rescan/`](evidence/remediation/rescan/) — báo cáo sau khắc phục, kết quả Gate và SBOM.
-- [`evidence/quality-gate/regression_test/`](evidence/quality-gate/regression_test/) — minh chứng kiểm thử hồi quy, bao gồm các tình huống PASS/FAIL/PASS trong điều kiện thử nghiệm được kiểm soát.
+- [`evidence/quality-gate/regression_test/`](evidence/quality-gate/regression_test/) — minh chứng kiểm thử hồi quy PASS/FAIL/PASS.
 
-## 8. Xem và tải báo cáo GitHub Actions
+## 9. Xem và tải báo cáo GitHub Actions
 
 1. Mở [GitHub Actions của dự án](https://github.com/VanHaoo/DevSecOps_Web_Security/actions).
 2. Chọn workflow **DevSecOps CI/CD & Security Pipeline** và mở một lần chạy.
-3. Chọn từng job để xem log; xem **Security Quality Gate** và phần **Summary** để biết trạng thái đánh giá.
+3. Chọn từng job để xem log; xem **Security Quality Gate** và phần **Summary**.
 4. Cuộn đến **Artifacts** để tải báo cáo (nếu artifact chưa hết hạn).
 
 | Artifact | Nội dung |
@@ -316,17 +348,17 @@ Các minh chứng được tổ chức tại:
 | `dast-zap-reports` | OWASP ZAP HTML và JSON |
 | `security-quality-gate-results` | Kết quả Gate JSON và bản tóm tắt Markdown |
 
-Artifact thông thường được giữ **14 ngày** theo workflow; artifact Security Quality Gate được giữ **30 ngày**. Các minh chứng quan trọng đã được lưu riêng trong `evidence/remediation/` và `evidence/quality-gate/regression_test/`.
+Artifact thông thường được giữ **14 ngày**; artifact Security Quality Gate được giữ **30 ngày**.
 
-## 9. Lưu ý an toàn và giới hạn
+## 10. Lưu ý an toàn và giới hạn
 
 - Chỉ chạy OWASP ZAP đối với ứng dụng thí nghiệm thuộc quyền kiểm soát của nhóm.
 - Không commit `.env`, secret thật, dữ liệu cá nhân hoặc cơ sở dữ liệu chứa thông tin nhạy cảm.
-- Không công khai cổng ứng dụng ra Internet chỉ vì container chạy bằng Gunicorn; cấu hình hiện tại phục vụ **localhost và HTTP**.
-- Việc đánh giá CVE phụ thuộc phiên bản image và cơ sở dữ liệu lỗ hổng tại thời điểm quét. Các lần chạy sau có thể cho kết quả khác.
-- Hệ thống chưa triển khai CD lên môi trường production; cần hoàn thiện quản lý secret, HTTPS, chính sách ngoại lệ và xử lý rủi ro còn tồn tại trước khi cân nhắc triển khai thực tế.
+- Không công khai cổng ứng dụng ra Internet; cấu hình hiện tại phục vụ **localhost và HTTP**.
+- Việc đánh giá CVE phụ thuộc phiên bản image và cơ sở dữ liệu lỗ hổng tại thời điểm quét.
+- Hệ thống chưa triển khai CD lên môi trường production; cần hoàn thiện quản lý secret, HTTPS, chính sách ngoại lệ trước khi cân nhắc triển khai thực tế.
 
-## 10. Tài liệu tham khảo trong repository
+## 11. Tài liệu tham khảo trong repository
 
 - [Thiết kế kiến trúc — `docs/architecture.md`](docs/architecture.md)
 - [Pipeline — `devsecops-pipeline.yml`](.github/workflows/devsecops-pipeline.yml)

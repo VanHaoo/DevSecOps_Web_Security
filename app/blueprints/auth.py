@@ -1,10 +1,34 @@
+from urllib.parse import urlsplit
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import User
 from app.forms import RegistrationForm, LoginForm, ProfileForm
 
-auth_bp = Blueprint('auth', __name__, template_folder='../../templates/auth')
+auth_bp = Blueprint('auth', __name__)
+
+
+def is_safe_url(target):
+    """Ensure redirect URL is a safe internal relative path and prevent Open Redirect (CWE-601)."""
+    if not target or not isinstance(target, str):
+        return False
+    # Reject strings with control characters, newlines, carriage returns or null bytes
+    if any(c in target for c in ('\r', '\n', '\t', '\0')):
+        return False
+    # Reject backslash anywhere (can be interpreted as domain separator in some browsers)
+    if '\\' in target:
+        return False
+    # Must start with single '/' and not '//' (protocol-relative URL)
+    if not target.startswith('/') or target.startswith('//'):
+        return False
+    try:
+        parsed = urlsplit(target)
+    except Exception:
+        return False
+    # Scheme and netloc must be empty for internal relative path
+    if parsed.scheme or parsed.netloc:
+        return False
+    return True
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -41,16 +65,18 @@ def login():
             login_user(user)
             flash('Đăng nhập thành công!', 'success')
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('main.index'))
+            if not next_page or not is_safe_url(next_page):
+                next_page = url_for('main.index')
+            return redirect(next_page)
         flash('Tên đăng nhập hoặc mật khẩu không đúng.', 'danger')
 
     return render_template('auth/login.html', form=form)
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
-    """User logout."""
+    """User logout via POST with CSRF protection."""
     logout_user()
     flash('Đã đăng xuất.', 'info')
     return redirect(url_for('main.index'))
@@ -74,3 +100,4 @@ def profile():
         return redirect(url_for('auth.profile'))
 
     return render_template('auth/profile.html', form=form)
+

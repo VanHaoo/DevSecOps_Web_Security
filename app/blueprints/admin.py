@@ -5,7 +5,7 @@ from app import db
 from app.models import Product, User
 from app.forms import ProductForm
 
-admin_bp = Blueprint('admin', __name__, template_folder='../../templates/admin')
+admin_bp = Blueprint('admin', __name__)
 
 
 def admin_required(f):
@@ -93,3 +93,4 @@ def user_list():
     """List all users."""
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin/users.html', users=users)
+
