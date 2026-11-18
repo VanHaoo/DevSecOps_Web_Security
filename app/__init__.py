@@ -30,11 +30,7 @@ def create_app(config_name=None):
         'devsecops-lab-secret-key-2025'
     }
 
-    if config_name == 'testing':
-        app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        app.config['WTF_CSRF_ENABLED'] = False
-        # Dynamic test key avoids hardcoded secret literal (REM-08)
+    if 
         app.config['SECRET_KEY'] = (
             os.environ.get('TEST_SECRET_KEY') or secrets.token_hex(32)
         )
