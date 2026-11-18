@@ -30,7 +30,7 @@ def create_app(config_name=None):
         'devsecops-lab-secret-key-2024'
     }
 
- 
+
     elif is_prod:
         if not secret_key or secret_key.strip() in insecure_defaults:
             raise ValueError(
