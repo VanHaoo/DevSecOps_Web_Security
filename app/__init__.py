@@ -27,7 +27,7 @@ def create_app(config_name=None):
         'dev-secret-key-change-in-production',
         'change-this-in-production',
         'change-this-to-a-random-secret-key',
-        'devsecops-lab-secret-key-2025'
+        'devsecops-lab-secret-key-2026'
     }
 
     if config_name == 'testing':
